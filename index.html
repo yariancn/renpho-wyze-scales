@@ -2,95 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>RESTAURACIÓN TITAN</title>
-    <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; }
-        .val { font-size: 3rem; font-weight: 900; color: #3b82f6; }
-        #debug { font-size: 11px; text-align: left; background: #000; padding: 15px; height: 150px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; }
-        button { background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; font-size: 16px; }
-    </style>
+    <title>RESCATE TITAN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
+<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
-    <h1 style="font-size: 18px; margin-bottom: 20px;">PREDICTACORE <br> <span style="color:#64748b; font-size: 12px;">PROTOCOLO ORIGINAL RESTAURADO</span></h1>
+    <button onclick="conectar()" style="padding:30px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
+        PASO 1: CONECTAR BÁSCULA
+    </button>
 
-    <button onclick="conectar()">CONECTAR BÁSCULA</button>
+    <div id="status" style="margin:20px; color:gray;">Estado: Esperando...</div>
 
-    <div class="card">
-        <p style="opacity: 0.6; font-size: 12px;">PESO ACTUAL</p>
-        <div id="peso" class="val">0.00</div>
-        <p>kg</p>
+    <div style="font-size:40px; margin:20px;">
+        <span id="peso">0.00</span> kg<br>
+        <span id="imp" style="color:cyan;">0</span> Ω
     </div>
 
-    <div class="card">
-        <p style="opacity: 0.6; font-size: 12px;">IMPEDANCIA</p>
-        <div id="imp" class="val">0</div>
-        <p>Ω</p>
-    </div>
-
-    <div id="debug" class="max-width: 320px; margin: auto;">Esperando...</div>
+    <div id="debug" style="font-size:10px; color:green; text-align:left; padding:20px; font-family:monospace;"></div>
 
 <script>
     async function conectar() {
-        const d = document.getElementById('debug');
-        const log = (m) => { d.innerHTML += `<br>> ${m}`; d.scrollTop = d.scrollHeight; };
-
+        const log = m => document.getElementById('debug').innerHTML += "<br>> " + m;
+        const status = document.getElementById('status');
+        
         try {
-            log("Buscando QN-Scale...");
+            log("Buscando...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
-                optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
+                optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
-            log("Conectando...");
+            log("Conectando al servidor GATT...");
             const server = await device.gatt.connect();
-            
-            // PAUSA CRÍTICA PARA iOS: Esperar a que el canal se estabilice
-            await new Promise(r => setTimeout(r, 1000));
-            
-            log("Obteniendo servicios...");
-            const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
-            const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
-            const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
+            status.innerText = "¡CONECTADO! ✅";
+            log("Conexión GATT exitosa.");
 
-            await noti.startNotifications();
-            log("Notificaciones activas.");
+            // ESPERA OBLIGATORIA PARA EL IPAD
+            await new Promise(r => setTimeout(r, 1500));
 
-            noti.addEventListener('characteristicvaluechanged', (event) => {
-                let data = event.target.value;
-                if (data.getUint8(0) === 0x10) {
-                    let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
+            log("Buscando Servicio...");
+            const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+            
+            log("Buscando Características...");
+            const charNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+            const charWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
+
+            await charNoti.startNotifications();
+            log("Escuchando datos...");
+
+            charNoti.addEventListener('characteristicvaluechanged', (e) => {
+                let d = e.target.value;
+                if (d.getUint8(0) === 0x10) {
+                    let p = ((d.getUint8(3) << 8) | d.getUint8(4)) / 100;
                     document.getElementById('peso').innerText = p.toFixed(2);
                 }
-                
-                // Escaneo de Ohms (Lógica de la Mac)
-                for (let i = 0; i < data.byteLength - 1; i++) {
-                    let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
-                    if (v > 350 && v < 900) {
+                for (let i = 0; i < d.byteLength - 1; i++) {
+                    let v = (d.getUint8(i) << 8) | d.getUint8(i+1);
+                    if (v > 300 && v < 1000) {
                         document.getElementById('imp').innerText = v;
-                        log("⚡ IMPEDANCIA: " + v);
+                        log("⚡ OHMS: " + v);
                     }
                 }
             });
 
-            // PAUSA ANTES DEL COMANDO: Evita que el iPad bloquee la escritura
-            await new Promise(r => setTimeout(r, 500));
-            
-            log("Activando sensores...");
+            log("Enviando activación...");
+            // Comando limpio de 9 bytes que funcionó en la Mac
             const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
             
-            // Intentar escritura con respaldo
-            try {
-                await writ.writeValue(cmd);
-            } catch (e) {
-                await writ.writeValueWithoutResponse(cmd);
-            }
-            
-            log("✅ Icono BT debe estar fijo. Súbete.");
+            // En iPad, writeValue sin respuesta es más estable al inicio
+            await charWrit.writeValueWithoutResponse(cmd);
+            log("Listo. Písala y quédate arriba.");
 
         } catch (e) {
-            log("❌ ERROR: " + e);
+            log("ERROR: " + e);
+            status.innerText = "Error: " + e;
         }
     }
 </script>
