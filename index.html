@@ -2,20 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - LECTOR FINAL</title>
+    <title>TITAN - LOCALIZADOR 110</title>
 </head>
 <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
-    <button onclick="conectar()" style="padding:25px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
-        CONECTAR Y LEER DATOS
+    <button onclick="conectar()" style="padding:25px; background:orange; color:black; font-weight:bold; border-radius:15px; border:none;">
+        BUSCAR VALOR 110
     </button>
 
-    <div style="font-size:40px; margin:20px;">
-        <span id="peso">0.00</span> kg<br>
-        <span id="imp" style="color:cyan;">0</span> Ω
+    <div style="font-size:30px; margin:20px; color: #00ff00;">
+        VALOR DETECTADO: <span id="peso">?</span><br>
+        UBICACIÓN: <span id="pos">?</span>
     </div>
 
-    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:150px; overflow:auto;"></div>
+    <div id="debug" style="font-size:10px; color:#ccc; text-align:left; padding:20px; font-family:monospace; height:300px; overflow:auto;"></div>
 
 <script>
     async function conectar() {
@@ -31,24 +31,38 @@
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
-            log("✅ Leyendo flujo QN...");
+            log("✅ Escaneando bytes para encontrar el 110...");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
-                
-                // Mapeo directo según tus logs:
-                // El peso viene en la posición 11 y 12 de la cadena 0x12
-                if (data[0] === 0x12 && data.length >= 14) {
-                    
-                    // PESO: bytes index 11 y 12
-                    let pesoRaw = (data[11] << 8) | data[12];
-                    let pesoFinal = pesoRaw / 10; // Según el log 01 36 = 310 = 31.0kg
-                    document.getElementById('peso').innerText = pesoFinal.toFixed(1);
+                log("HEX: " + Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
 
-                    // IMPEDANCIA: bytes index 13 y 14
-                    let impRaw = (data[13] << 8) | data[14];
-                    if (impRaw > 0) {
-                        document.getElementById('imp').innerText = impRaw;
+                for (let i = 0; i < data.length; i++) {
+                    // 1. ¿Es un solo byte?
+                    if (data[i] >= 108 && data[i] <= 112) {
+                        document.getElementById('peso').innerText = data[i];
+                        document.getElementById('pos').innerText = "Byte único en posición " + i;
+                        log("🎯 ¡ENCONTRADO! Byte " + i + " vale " + data[i]);
+                    }
+
+                    // 2. ¿Es la suma de dos bytes contiguos?
+                    if (i < data.length - 1) {
+                        let suma = data[i] + data[i+1];
+                        if (suma >= 108 && suma <= 112) {
+                            document.getElementById('peso').innerText = suma;
+                            document.getElementById('pos').innerText = "Suma de bytes " + i + " y " + (i+1);
+                            log("🎯 ¡ENCONTRADO! Suma de " + i + " y " + (i+1) + " es " + suma);
+                        }
+                    }
+
+                    // 3. ¿Es el par de bytes como entero (Big Endian)?
+                    if (i < data.length - 1) {
+                        let val = (data[i] << 8) | data[i+1];
+                        if (val >= 108 && val <= 112) {
+                            document.getElementById('peso').innerText = val;
+                            document.getElementById('pos').innerText = "Entero en posición " + i;
+                            log("🎯 ¡ENCONTRADO! Entero en " + i + " vale " + val);
+                        }
                     }
                 }
             });
