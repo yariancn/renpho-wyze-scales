@@ -1,22 +1,66 @@
 <!DOCTYPE html>
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>RECONEXIÓN TITAN</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .data-card { background: #1e293b; border-radius: 20px; padding: 20px; margin: 10px 0; }
+        #debug { font-size: 10px; text-align: left; background: black; padding: 10px; height: 150px; overflow: auto; color: #10b981; }
+    </style>
+</head>
 <body>
-    <button onclick="test()" style="padding:50px; width:100%; font-size:20px;">FORZAR ENCENDIDO BT</button>
-    <div id="log"></div>
+    <h2>RECONEXIÓN TITAN</h2>
+    <button onclick="conectar()" style="padding:20px; border-radius:50px; background:blue; color:white; font-weight:bold;">
+        CONECTAR AHORA
+    </button>
+    
+    <div class="data-card">
+        <p>PESO: <span id="peso">0.00</span> kg</p>
+        <p>IMPEDANCIA: <span id="imp">0</span> Ω</p>
+    </div>
+
+    <div id="debug">Logs...</div>
+
 <script>
-    async function test() {
-        const log = m => document.getElementById('log').innerHTML += "<br>" + m;
+    async function conectar() {
+        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; };
         try {
-            log("Buscando...");
+            log("Buscando QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
+                filters: [{ name: 'QN-Scale' }],
                 optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
-            log("Conectando a: " + device.name);
+
             const server = await device.gatt.connect();
-            log("✅ ¡CONECTADO! Mira el símbolo en la báscula.");
+            log("✅ CONECTADO. El icono BT debe prender.");
             
-            // Si el símbolo prende, el problema de conexión está resuelto.
+            const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
+            const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
+            const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
+
+            await noti.startNotifications();
+            
+            noti.addEventListener('characteristicvaluechanged', (event) => {
+                let data = event.target.value;
+                if (data.getUint8(0) === 0x10) {
+                    let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
+                    document.getElementById('peso').innerText = p.toFixed(2);
+                }
+                for (let i = 0; i < data.byteLength - 1; i++) {
+                    let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
+                    if (v > 350 && v < 900) {
+                        document.getElementById('imp').innerText = v;
+                        log("⚡ IMPEDANCIA: " + v);
+                    }
+                }
+            });
+
+            // Handshake exacto de la Mac
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            await writ.writeValue(cmd);
+            log("Comando enviado. Súbete descalzo.");
+
         } catch (e) { log("Error: " + e); }
     }
 </script>
