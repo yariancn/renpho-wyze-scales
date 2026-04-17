@@ -2,61 +2,46 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - ESTABILIZADOR DE DATOS</title>
+    <title>TITAN - ANALIZADOR DE RÁFAGAS</title>
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; position: relative; overflow: hidden; }
-        .val { font-size: 3.5rem; font-weight: 900; color: #3b82f6; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; background: #64748b; }
-        .stable { background: #10b981; box-shadow: 0 0 10px #10b981; }
-        #debug { font-size: 10px; color: #10b981; text-align: left; padding: 15px; background: #000; height: 120px; overflow: auto; margin-top: 20px; border-radius: 10px; }
+        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; }
+        .val { font-size: 3rem; font-weight: 900; color: #3b82f6; }
+        #status { font-size: 12px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; }
+        #debug { font-size: 10px; text-align: left; background: #000; padding: 15px; height: 200px; overflow-y: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; }
         button { background: #2563eb; color: white; padding: 20px; width: 100%; max-width: 320px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; }
+        .progress-bar { width: 0%; height: 4px; background: #3b82f6; transition: width 0.3s; margin-top: 10px; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <h1 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 20px;">TITAN <span style="color:#3b82f6">SMART-BUFFER</span></h1>
+    <h1 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 5px;">TITAN <span style="color:#3b82f6">RECORDER</span></h1>
+    <p id="status">Listo para capturar ráfagas</p>
 
-    <button onclick="conectar()">CONECTAR Y ESTABILIZAR</button>
+    <button onclick="iniciarCaptura()">INICIAR CAPTURA TOTAL</button>
 
     <div class="card">
-        <p style="font-size: 11px; opacity: 0.5;"><span id="dotPeso" class="status-dot"></span> PESO DETECTADO</p>
-        <div id="peso" class="val">0.0</div>
-        <p id="msgPeso" style="font-size: 10px; color: #64748b;">Esperando estabilidad...</p>
+        <p style="font-size: 11px; opacity: 0.5;">RESULTADO ANALIZADO</p>
+        <div id="pesoFinal" class="val">0.0</div>
+        <div id="impFinal" style="font-size: 1.5rem; color: #06b6d4;">0 Ω</div>
+        <div id="bar" class="progress-bar"></div>
     </div>
 
-    <div class="card" style="border-color: #06b6d4;">
-        <p style="font-size: 11px; opacity: 0.5;"><span id="dotImp" class="status-dot"></span> IMPEDANCIA (Ω)</p>
-        <div id="imp" class="val" style="color: #06b6d4;">0</div>
-        <p id="msgImp" style="font-size: 10px; color: #64748b;">Calculando bio-flujo...</p>
-    </div>
-
-    <div id="debug">Iniciando sistema de análisis...</div>
+    <div id="debug">Logs de ráfagas acumuladas...</div>
 
 <script>
-    let bufferPeso = [];
-    let bufferImp = [];
-    const UMBRAL_ESTABILIDAD = 8; // Número de veces que debe repetirse el dato
+    let acumuladorHex = [];
+    let estaConectado = false;
 
-    function obtenerModa(arr) {
-        if(arr.length === 0) return null;
-        let counts = {};
-        let maxCount = 0;
-        let maxValue = arr[0];
-        for(let v of arr) {
-            counts[v] = (counts[v] || 0) + 1;
-            if(counts[v] > maxCount) {
-                maxCount = counts[v];
-                maxValue = v;
-            }
-        }
-        return { value: maxValue, count: maxCount };
-    }
-
-    async function conectar() {
-        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; };
-        bufferPeso = []; bufferImp = [];
+    async function iniciarCaptura() {
+        const d = document.getElementById('debug');
+        const status = document.getElementById('status');
+        const log = m => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
         
+        acumuladorHex = [];
+        document.getElementById('pesoFinal').innerText = "---";
+        document.getElementById('bar').style.width = "0%";
+
         try {
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
@@ -64,55 +49,79 @@
             });
 
             const server = await device.gatt.connect();
+            estaConectado = true;
+            status.innerText = "🔴 GRABANDO DATOS...";
+            log("Conexión establecida. Acumulando ráfagas...");
+
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-            const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
-            log("🔌 Conectado. Analizando ráfagas...");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
+                let hexStr = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
                 
-                for (let i = 0; i < data.length - 1; i++) {
-                    let combined = (data[i] << 8) | data[i+1];
-
-                    // ANÁLISIS DE PESO
-                    if (combined >= 200 && combined <= 400) {
-                        let p = (combined + 793) / 10;
-                        bufferPeso.push(p.toFixed(1));
-                        
-                        let moda = obtenerModa(bufferPeso);
-                        document.getElementById('peso').innerText = moda.value;
-                        
-                        if (moda.count >= UMBRAL_ESTABILIDAD) {
-                            document.getElementById('dotPeso').classList.add('stable');
-                            document.getElementById('msgPeso').innerText = "✅ PESO CONFIRMADO";
-                            document.getElementById('msgPeso').style.color = "#10b981";
-                        }
-                    }
-
-                    // ANÁLISIS DE IMPEDANCIA
-                    if (combined > 350 && combined < 2500) {
-                        bufferImp.push(combined);
-                        let modaI = obtenerModa(bufferImp);
-                        document.getElementById('imp').innerText = modaI.value;
-
-                        if (modaI.count >= UMBRAL_ESTABILIDAD) {
-                            document.getElementById('dotImp').classList.add('stable');
-                            document.getElementById('msgImp').innerText = "✅ IMPEDANCIA ESTABLE";
-                            document.getElementById('msgImp').style.color = "#0ea5e9";
-                        }
-                    }
-                }
+                acumuladorHex.push(hexStr);
+                document.getElementById('bar').style.width = (acumuladorHex.length * 5) + "%";
+                log("Ráfaga " + acumuladorHex.length + ": " + hexStr);
             });
 
-            setTimeout(() => {
-                const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-                cWrit.writeValueWithoutResponse(cmd).catch(()=>{});
-            }, 1200);
+            // Detectar cuando la báscula se desconecta (fin de transmisión)
+            device.addEventListener('gattserverdisconnected', () => {
+                estaConectado = false;
+                status.innerText = "✅ CAPTURA FINALIZADA. ANALIZANDO...";
+                analizarDatosAcumulados();
+            });
 
         } catch (e) { log("ERROR: " + e); }
+    }
+
+    function analizarDatosAcumulados() {
+        if (acumuladorHex.length === 0) return;
+
+        // 1. Contar frecuencia de ráfagas para encontrar la estable
+        let frecuencias = {};
+        acumuladorHex.forEach(rafaga => {
+            frecuencias[rafaga] = (frecuencias[rafaga] || 0) + 1;
+        });
+
+        // 2. Obtener la ráfaga que más se repitió al final (Moda)
+        let rafagaGanadora = acumuladorHex[0];
+        let maxFrec = 0;
+        
+        // Priorizamos las ráfagas que aparecen hacia el final del pesaje
+        for (let rafaga in frecuencias) {
+            if (frecuencias[rafaga] >= maxFrec) {
+                maxFrec = frecuencias[rafaga];
+                rafagaGanadora = rafaga;
+            }
+        }
+
+        console.log("Ráfaga analizada como estable:", rafagaGanadora);
+        procesarHexFinal(rafagaGanadora);
+    }
+
+    function procesarHexFinal(hex) {
+        // Convertir HEX de nuevo a bytes
+        let bytes = [];
+        for (let i = 0; i < hex.length; i += 2) {
+            bytes.push(parseInt(hex.substr(i, 2), 16));
+        }
+
+        // Aplicamos la lógica de tu báscula 0x12 (Qingniu)
+        if (bytes[0] === 0x12) {
+            // Peso: bytes 10 y 11 (los que nos dieron el 310 anteriormente)
+            let base = (bytes[10] << 8) | bytes[11];
+            let pesoReal = (base + 793) / 10;
+
+            // Impedancia: bytes 13 y 14
+            let ohms = (bytes[13] << 8) | bytes[14];
+
+            document.getElementById('pesoFinal').innerText = pesoReal.toFixed(1);
+            document.getElementById('impFinal').innerText = ohms + " Ω";
+            document.getElementById('status').innerText = "LECTURA PROCESADA CON ÉXITO";
+        }
     }
 </script>
 </body>
