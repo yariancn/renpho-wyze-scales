@@ -2,13 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>RESCATE TITAN</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESCATE TITAN FINAL</title>
 </head>
 <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
-    <button onclick="conectar()" style="padding:30px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
-        PASO 1: CONECTAR BÁSCULA
+    <button onclick="conectar()" style="padding:25px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
+        CONECTAR BÁSCULA
     </button>
 
     <div id="status" style="margin:20px; color:gray;">Estado: Esperando...</div>
@@ -22,60 +21,65 @@
 
 <script>
     async function conectar() {
-        const log = m => document.getElementById('debug').innerHTML += "<br>> " + m;
-        const status = document.getElementById('status');
+        const d = document.getElementById('debug');
+        const log = m => d.innerHTML += "<br>> " + m;
         
         try {
-            log("Buscando...");
+            log("Buscando QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
+                // USAMOS EL UUID COMPLETO EN MINÚSCULAS (Regla de oro de iOS)
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
-            log("Conectando al servidor GATT...");
+            log("GATT: Conectando...");
             const server = await device.gatt.connect();
-            status.innerText = "¡CONECTADO! ✅";
-            log("Conexión GATT exitosa.");
 
-            // ESPERA OBLIGATORIA PARA EL IPAD
-            await new Promise(r => setTimeout(r, 1500));
+            // PAUSA OBLIGATORIA: Dejamos que el chip de la báscula respire tras el enlace
+            await new Promise(r => setTimeout(r, 2000));
 
-            log("Buscando Servicio...");
+            log("GATT: Obteniendo Servicio...");
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             
-            log("Buscando Características...");
-            const charNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-            const charWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
+            log("GATT: Obteniendo Características...");
+            const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+            const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
-            await charNoti.startNotifications();
-            log("Escuchando datos...");
+            await cNoti.startNotifications();
+            log("✅ Notificaciones OK.");
 
-            charNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let d = e.target.value;
-                if (d.getUint8(0) === 0x10) {
-                    let p = ((d.getUint8(3) << 8) | d.getUint8(4)) / 100;
-                    document.getElementById('peso').innerText = p.toFixed(2);
+            cNoti.addEventListener('characteristicvaluechanged', (e) => {
+                let data = e.target.value;
+                let header = data.getUint8(0);
+
+                if (header === 0x10) {
+                    let peso = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
+                    document.getElementById('peso').innerText = peso.toFixed(2);
                 }
-                for (let i = 0; i < d.byteLength - 1; i++) {
-                    let v = (d.getUint8(i) << 8) | d.getUint8(i+1);
-                    if (v > 300 && v < 1000) {
+                
+                // ESCANEO DE IMPEDANCIA (Lógica idéntica a Python)
+                for (let i = 0; i < data.byteLength - 1; i++) {
+                    let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
+                    if (v > 350 && v < 950) {
                         document.getElementById('imp').innerText = v;
-                        log("⚡ OHMS: " + v);
+                        log("⚡ OHMS DETECTADOS: " + v);
                     }
                 }
             });
 
-            log("Enviando activación...");
-            // Comando limpio de 9 bytes que funcionó en la Mac
+            // HANDSHAKE QUE FUNCIONA: 
+            // 0x13, 0x09, 0x15, SEX, HEIGHT, AGE, 0x00, 0x00, CHECKSUM
+            // Usamos exactamente los bytes que enviamos desde la Mac
             const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
             
-            // En iPad, writeValue sin respuesta es más estable al inicio
-            await charWrit.writeValueWithoutResponse(cmd);
-            log("Listo. Písala y quédate arriba.");
+            // En iPad, enviamos SIN RESPUESTA para evitar que el canal se colapse
+            await cWrit.writeValueWithoutResponse(cmd);
+            log("Comando enviado. Súbete ahora.");
+            document.getElementById('status').innerText = "CONECTADO - ESPERANDO DATOS";
 
         } catch (e) {
             log("ERROR: " + e);
-            status.innerText = "Error: " + e;
+            document.getElementById('status').innerText = "ERROR EN CONEXIÓN";
         }
     }
 </script>
