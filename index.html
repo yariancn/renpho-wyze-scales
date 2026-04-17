@@ -53,6 +53,11 @@
                 optionalServices: [SERVICE_UUID]
             });
 
+            device.addEventListener('gattserverdisconnected', () => {
+                log("❌ DESCONECTADO (Tiempo de espera agotado)");
+                document.getElementById('status').innerText = "Estado: DESCONECTADO";
+            });
+
             const server = await device.gatt.connect();
             log("Conectado.");
             const service = await server.getPrimaryService(SERVICE_UUID);
@@ -71,43 +76,38 @@
                 } else {
                     for (let i = 0; i < data.byteLength - 1; i++) {
                         let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
-                        // Filtro de impedancia detectado en Mac
                         if (val > 350 && val < 900) {
                             document.getElementById('impedancia').innerText = val + " Ω";
-                            log("⚡ IMPEDANCIA DETECTADA: " + val);
+                            log("⚡ IMPEDANCIA RECIBIDA: " + val);
                         }
                     }
                 }
             });
 
-            log("Enviando ráfaga de despertar...");
+            // SECUENCIA DE ACTIVACIÓN DE BAJA LATENCIA
+            log("Enviando comandos...");
             
-            // Datos de usuario para el Handshake
-            const sex = 0x01; // Masc
-            const height = 180;
-            const age = 50;
-            
-            // Comando 1: Sincronización (Tipo 0x10)
-            const syncCmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
-            
-            // Comando 2: Datos de Usuario (Tipo 0x15) con Checksum XOR
-            const userCmd = new Uint8Array([0x13, 0x09, 0x15, sex, height, age, 0x00, 0x00, 0x42]);
+            const cmdSync = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
+            const cmdUser = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
 
-            // Ejecución secuencial para Bluefy
-            async function enviar(cmd) {
+            // En Bluefy/iOS, a veces writeValueWithoutResponse es más confiable para comandos rápidos
+            async function forzarEscritura(cmd) {
                 try {
-                    await writeChar.writeValueWithResponse(cmd);
-                } catch(e) {
                     await writeChar.writeValueWithoutResponse(cmd);
+                } catch (e) {
+                    await writeChar.writeValue(cmd);
                 }
             }
 
-            await enviar(syncCmd);
-            await new Promise(r => setTimeout(r, 800));
-            await enviar(userCmd);
-            log("Comandos enviados. Súbete descalzo.");
+            // Enviamos ráfaga intercalada
+            await forzarEscritura(cmdSync);
+            await new Promise(r => setTimeout(r, 500));
+            await forzarEscritura(cmdUser);
+            await new Promise(r => setTimeout(r, 500));
+            await forzarEscritura(cmdUser); // Re-confirmación
 
-            document.getElementById('status').innerText = "ESPERANDO DATOS...";
+            log("Listo. Súbete ahora.");
+            document.getElementById('status').innerText = "ESPERANDO PESO E IMPEDANCIA...";
 
         } catch (error) {
             log("ERROR: " + error);
