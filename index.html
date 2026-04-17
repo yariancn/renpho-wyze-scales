@@ -13,9 +13,9 @@
 </head>
 <body>
 
-    <h1 class="text-xl font-black mb-6">PREDICTACORE <br> <span class="text-blue-500">TEST DE BÁSCULA</span></h1>
+    <h1 class="text-xl font-black mb-6">PREDICTACORE <br> <span class="text-blue-500 text-sm">IPAD RECOVERY MODE</span></h1>
 
-    <button onclick="conectarBascula()" class="bg-blue-600 text-white px-8 py-4 rounded-full font-bold mb-8">
+    <button onclick="conectarBascula()" class="bg-blue-600 text-white px-8 py-4 rounded-full font-bold mb-8 active:scale-95 transition-all">
         CONECTAR BÁSCULA
     </button>
 
@@ -54,53 +54,54 @@
             });
 
             const server = await device.gatt.connect();
-            log("✅ Conectado.");
+            log("✅ GATT Conectado.");
+
             const service = await server.getPrimaryService(SERVICE_UUID);
             const characteristic = await service.getCharacteristic(NOTIFY_UUID);
             const writeChar = await service.getCharacteristic(WRITE_UUID);
 
+            // IMPORTANTE EN iOS: Iniciar notificaciones ANTES de cualquier comando
             await characteristic.startNotifications();
+            log("Notificaciones listas.");
 
             characteristic.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
                 let header = data.getUint8(0);
 
+                // Captura de Peso
                 if (header === 0x10) {
-                    let peso = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
-                    document.getElementById('peso').innerText = peso.toFixed(2) + " kg";
-                } else {
+                    let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
+                    document.getElementById('peso').innerText = p.toFixed(2) + " kg";
+                } 
+                // Escaneo manual del búfer (Lo que funcionó en Mac)
+                else {
                     for (let i = 0; i < data.byteLength - 1; i++) {
                         let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
                         if (val > 350 && val < 900) {
                             document.getElementById('impedancia').innerText = val + " Ω";
-                            log("⚡ DATOS RECIBIDOS: " + val + " Ohms");
+                            log("⚡ ¡IMPEDANCIA DETECTADA!: " + val);
                         }
                     }
                 }
             });
 
-            // CAMBIO TÉCNICO: Comando de "Apertura de canal" antes del perfil de usuario
-            const cmdOpen = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
+            // SECUENCIA DE COMANDOS DE INGENIERÍA PARA iOS
+            const cmdSync = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
             const cmdUser = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
 
-            log("Enviando comandos...");
-            
-            // Enviamos con una cadencia que el iPad pueda procesar
-            await writeChar.writeValueWithoutResponse(cmdOpen);
-            await new Promise(r => setTimeout(r, 400));
-            await writeChar.writeValueWithoutResponse(cmdUser);
-            
-            // Re-enviamos el perfil cada 2 segundos para que la báscula no se apague
-            const keepAlive = setInterval(async () => {
-                if (device.gatt.connected) {
-                    try { await writeChar.writeValueWithoutResponse(cmdUser); } catch(e) {}
-                } else {
-                    clearInterval(keepAlive);
-                }
-            }, 2000);
+            log("Enviando ráfaga de activación...");
 
-            document.getElementById('status').innerText = "ESPERANDO DATOS...";
-            log("Súbete descalzo.");
+            // Paso 1: Sincronizar
+            await writeChar.writeValueWithoutResponse(cmdSync);
+            await new Promise(r => setTimeout(r, 600));
+
+            // Paso 2: Perfil de usuario (Repetido para asegurar MTU en iOS)
+            await writeChar.writeValueWithoutResponse(cmdUser);
+            await new Promise(r => setTimeout(r, 600));
+            await writeChar.writeValueWithoutResponse(cmdUser);
+
+            document.getElementById('status').innerText = "ESPERANDO... NO TE BAJES";
+            log("Pisa firme y descalzo.");
 
         } catch (error) {
             log("ERROR: " + error);
