@@ -2,24 +2,32 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>RESTAURACIÓN TITAN</title>
+    <title>TITAN - CAPTURA DE PESO</title>
 </head>
-<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
+<body style="background:#0a0f1d; color:white; text-align:center; font-family:sans-serif; padding-top:30px;">
 
-    <button onclick="conectar()" style="padding:25px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
-        CONECTAR BÁSCULA
+    <h2 style="font-size:16px; opacity:0.7;">REPORTE TITAN: CAPTURA DE FLUJO</h2>
+    
+    <button onclick="conectar()" style="padding:20px; background:#2563eb; color:white; border-radius:15px; border:none; font-weight:bold; width:80%;">
+        CONECTAR Y ESCUCHAR
     </button>
 
-    <div style="font-size:40px; margin:20px;">
-        <span id="peso">0.00</span> kg<br>
-        <span id="imp" style="color:cyan;">0</span> Ω
+    <div style="margin:30px;">
+        <div style="background:#161e31; padding:20px; border-radius:15px; margin-bottom:10px;">
+            <p style="font-size:12px; opacity:0.5;">PESO DETECTADO</p>
+            <span id="peso" style="font-size:40px; font-weight:bold; color:#3b82f6;">0.00</span> kg
+        </div>
+        <div style="background:#161e31; padding:20px; border-radius:15px;">
+            <p style="font-size:12px; opacity:0.5;">IMPEDANCIA DETECTADA</p>
+            <span id="imp" style="font-size:40px; font-weight:bold; color:#06b6d4;">0</span> Ω
+        </div>
     </div>
 
-    <div id="debug" style="font-size:10px; color:green; text-align:left; padding:20px; font-family:monospace;"></div>
+    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:150px; overflow:auto;"></div>
 
 <script>
     async function conectar() {
-        const log = m => document.getElementById('debug').innerHTML += "<br>> " + m;
+        const log = m => { const d = document.getElementById('debug'); d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
         try {
             log("Buscando QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
@@ -27,44 +35,46 @@
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
-            log("Conectando...");
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
+            // ESCUCHA INMEDIATA
             await cNoti.startNotifications();
-            log("✅ Escuchando...");
+            log("✅ ESCUCHANDO FLUJO...");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let d = e.target.value;
-                let h = d.getUint8(0);
-
-                // Si detectamos peso, actualizamos pantalla
-                if (h === 0x10) {
-                    let p = ((d.getUint8(3) << 8) | d.getUint8(4)) / 100;
-                    document.getElementById('peso').innerText = p.toFixed(2);
+                let raw = new Uint8Array(d.buffer);
+                
+                // 1. Prioridad: Peso (0x10)
+                if (raw[0] === 0x10) {
+                    let p = ((raw[3] << 8) | raw[4]) / 100;
+                    if (p > 0) {
+                        document.getElementById('peso').innerText = p.toFixed(2);
+                        log("⚖️ Peso recibido: " + p);
+                    }
                 }
                 
-                // Escaneo de impedancia
-                for (let i = 0; i < d.byteLength - 1; i++) {
-                    let v = (d.getUint8(i) << 8) | d.getUint8(i+1);
+                // 2. Escaneo de Impedancia (lo que ya te funcionó 4 veces)
+                for (let i = 0; i < raw.length - 1; i++) {
+                    let v = (raw[i] << 8) | raw[i+1];
                     if (v > 350 && v < 950) {
                         document.getElementById('imp').innerText = v;
-                        log("⚡ IMPEDANCIA: " + v);
+                        log("⚡ OHMS: " + v);
                     }
                 }
             });
 
-            // EL CAMBIO: Enviamos el comando DESPUÉS de un segundo de conexión
-            // para que no interrumpa el inicio del pesaje de la báscula.
+            // Handshake con delay para no bloquear el peso
             setTimeout(async () => {
-                log("Activando sensores...");
+                log("Enviando activación de sensores...");
                 const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
                 await cWrit.writeValueWithoutResponse(cmd);
-            }, 1500);
+            }, 2000);
 
-        } catch (e) { log("ERROR: " + e); }
+        } catch (e) { log("ERR: " + e); }
     }
 </script>
 </body>
