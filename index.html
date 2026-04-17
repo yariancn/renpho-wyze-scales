@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN MODO ESCUCHA</title>
+    <title>TITAN - LECTOR FINAL</title>
 </head>
 <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
-    <button onclick="conectar()" style="padding:25px; background:green; color:white; font-weight:bold; border-radius:15px; border:none;">
-        MODO ESCUCHA PASIVA
+    <button onclick="conectar()" style="padding:25px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
+        CONECTAR Y LEER DATOS
     </button>
 
     <div style="font-size:40px; margin:20px;">
@@ -15,53 +15,43 @@
         <span id="imp" style="color:cyan;">0</span> Ω
     </div>
 
-    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:200px; overflow:auto;"></div>
+    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:150px; overflow:auto;"></div>
 
 <script>
     async function conectar() {
-        const d = document.getElementById('debug');
-        const log = m => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
-        
+        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; };
         try {
-            log("Buscando...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
             const server = await device.gatt.connect();
-            log("✅ Canal abierto. Escuchando flujo crudo...");
-
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
+            log("✅ Leyendo flujo QN...");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
                 
-                // Registro crudo para ver qué está "escupiendo"
-                log("HEX: " + Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
-
-                // Lógica de detección por patrón de bytes
-                for (let i = 0; i < data.length; i++) {
-                    // Si el byte es 0x10, es peso
-                    if (data[i] === 0x10 && i + 4 < data.length) {
-                        let p = ((data[i+3] << 8) | data[i+4]) / 100;
-                        if (p > 10) document.getElementById('peso').innerText = p.toFixed(2);
-                    }
+                // Mapeo directo según tus logs:
+                // El peso viene en la posición 11 y 12 de la cadena 0x12
+                if (data[0] === 0x12 && data.length >= 14) {
                     
-                    // Si encontramos la pareja de bytes de la impedancia (400-800 Ohms)
-                    if (i + 1 < data.length) {
-                        let v = (data[i] << 8) | data[i+1];
-                        if (v > 380 && v < 900) {
-                            document.getElementById('imp').innerText = v;
-                        }
+                    // PESO: bytes index 11 y 12
+                    let pesoRaw = (data[11] << 8) | data[12];
+                    let pesoFinal = pesoRaw / 10; // Según el log 01 36 = 310 = 31.0kg
+                    document.getElementById('peso').innerText = pesoFinal.toFixed(1);
+
+                    // IMPEDANCIA: bytes index 13 y 14
+                    let impRaw = (data[13] << 8) | data[14];
+                    if (impRaw > 0) {
+                        document.getElementById('imp').innerText = impRaw;
                     }
                 }
             });
-
-            log("No haré nada más. Súbete y veamos qué escupe.");
 
         } catch (e) { log("ERR: " + e); }
     }
