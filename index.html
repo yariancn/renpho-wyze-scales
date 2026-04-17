@@ -2,15 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>RESCATE TITAN FINAL</title>
+    <title>RESTAURACIÓN TITAN</title>
 </head>
 <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
     <button onclick="conectar()" style="padding:25px; background:blue; color:white; font-weight:bold; border-radius:15px; border:none;">
         CONECTAR BÁSCULA
     </button>
-
-    <div id="status" style="margin:20px; color:gray;">Estado: Esperando...</div>
 
     <div style="font-size:40px; margin:20px;">
         <span id="peso">0.00</span> kg<br>
@@ -21,66 +19,52 @@
 
 <script>
     async function conectar() {
-        const d = document.getElementById('debug');
-        const log = m => d.innerHTML += "<br>> " + m;
-        
+        const log = m => document.getElementById('debug').innerHTML += "<br>> " + m;
         try {
             log("Buscando QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
-                // USAMOS EL UUID COMPLETO EN MINÚSCULAS (Regla de oro de iOS)
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
-            log("GATT: Conectando...");
+            log("Conectando...");
             const server = await device.gatt.connect();
-
-            // PAUSA OBLIGATORIA: Dejamos que el chip de la báscula respire tras el enlace
-            await new Promise(r => setTimeout(r, 2000));
-
-            log("GATT: Obteniendo Servicio...");
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
-            
-            log("GATT: Obteniendo Características...");
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
-            log("✅ Notificaciones OK.");
+            log("✅ Escuchando...");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let data = e.target.value;
-                let header = data.getUint8(0);
+                let d = e.target.value;
+                let h = d.getUint8(0);
 
-                if (header === 0x10) {
-                    let peso = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
-                    document.getElementById('peso').innerText = peso.toFixed(2);
+                // Si detectamos peso, actualizamos pantalla
+                if (h === 0x10) {
+                    let p = ((d.getUint8(3) << 8) | d.getUint8(4)) / 100;
+                    document.getElementById('peso').innerText = p.toFixed(2);
                 }
                 
-                // ESCANEO DE IMPEDANCIA (Lógica idéntica a Python)
-                for (let i = 0; i < data.byteLength - 1; i++) {
-                    let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
+                // Escaneo de impedancia
+                for (let i = 0; i < d.byteLength - 1; i++) {
+                    let v = (d.getUint8(i) << 8) | d.getUint8(i+1);
                     if (v > 350 && v < 950) {
                         document.getElementById('imp').innerText = v;
-                        log("⚡ OHMS DETECTADOS: " + v);
+                        log("⚡ IMPEDANCIA: " + v);
                     }
                 }
             });
 
-            // HANDSHAKE QUE FUNCIONA: 
-            // 0x13, 0x09, 0x15, SEX, HEIGHT, AGE, 0x00, 0x00, CHECKSUM
-            // Usamos exactamente los bytes que enviamos desde la Mac
-            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-            
-            // En iPad, enviamos SIN RESPUESTA para evitar que el canal se colapse
-            await cWrit.writeValueWithoutResponse(cmd);
-            log("Comando enviado. Súbete ahora.");
-            document.getElementById('status').innerText = "CONECTADO - ESPERANDO DATOS";
+            // EL CAMBIO: Enviamos el comando DESPUÉS de un segundo de conexión
+            // para que no interrumpa el inicio del pesaje de la báscula.
+            setTimeout(async () => {
+                log("Activando sensores...");
+                const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+                await cWrit.writeValueWithoutResponse(cmd);
+            }, 1500);
 
-        } catch (e) {
-            log("ERROR: " + e);
-            document.getElementById('status').innerText = "ERROR EN CONEXIÓN";
-        }
+        } catch (e) { log("ERROR: " + e); }
     }
 </script>
 </body>
