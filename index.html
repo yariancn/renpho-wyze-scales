@@ -2,31 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - RESTAURACIÓN</title>
+    <title>RESTAURACIÓN TITAN</title>
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; }
-        .val { font-size: 3rem; font-weight: 900; color: #3b82f6; margin: 10px 0; }
+        .val { font-size: 3rem; font-weight: 900; color: #3b82f6; }
         #debug { font-size: 11px; text-align: left; background: #000; padding: 15px; height: 150px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; }
         button { background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
 
-    <h1 style="font-size: 20px; margin-bottom: 20px;">PREDICTACORE <br> <span style="color:#64748b; font-size: 14px;">MODO RESTAURACIÓN</span></h1>
+    <h1 style="font-size: 18px; margin-bottom: 20px;">PREDICTACORE <br> <span style="color:#64748b; font-size: 12px;">PROTOCOLO ORIGINAL RESTAURADO</span></h1>
 
     <button onclick="conectar()">CONECTAR BÁSCULA</button>
 
     <div class="card">
-        <p style="opacity: 0.6; font-size: 12px; letter-spacing: 1px;">PESO ACTUAL</p>
+        <p style="opacity: 0.6; font-size: 12px;">PESO ACTUAL</p>
         <div id="peso" class="val">0.00</div>
-        <p style="font-size: 14px;">kg</p>
+        <p>kg</p>
     </div>
 
     <div class="card">
-        <p style="opacity: 0.6; font-size: 12px; letter-spacing: 1px;">IMPEDANCIA</p>
+        <p style="opacity: 0.6; font-size: 12px;">IMPEDANCIA</p>
         <div id="imp" class="val">0</div>
-        <p style="font-size: 14px;">Ω (Ohms)</p>
+        <p>Ω</p>
     </div>
 
     <div id="debug" class="max-width: 320px; margin: auto;">Esperando...</div>
@@ -37,16 +37,19 @@
         const log = (m) => { d.innerHTML += `<br>> ${m}`; d.scrollTop = d.scrollHeight; };
 
         try {
-            log("Iniciando búsqueda...");
+            log("Buscando QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
 
-            log("Dispositivo encontrado. Conectando...");
+            log("Conectando...");
             const server = await device.gatt.connect();
             
-            log("✅ CONECTADO. Obteniendo servicios...");
+            // PAUSA CRÍTICA PARA iOS: Esperar a que el canal se estabilice
+            await new Promise(r => setTimeout(r, 1000));
+            
+            log("Obteniendo servicios...");
             const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
             const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
             const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
@@ -56,30 +59,35 @@
 
             noti.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
-                let head = data.getUint8(0);
-
-                // 1. Capturar Peso
-                if (head === 0x10) {
+                if (data.getUint8(0) === 0x10) {
                     let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
                     document.getElementById('peso').innerText = p.toFixed(2);
                 }
                 
-                // 2. Escanear Impedancia (Misma lógica exitosa de la Mac)
+                // Escaneo de Ohms (Lógica de la Mac)
                 for (let i = 0; i < data.byteLength - 1; i++) {
                     let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
                     if (v > 350 && v < 900) {
                         document.getElementById('imp').innerText = v;
-                        log("⚡ IMPEDANCIA DETECTADA: " + v);
+                        log("⚡ IMPEDANCIA: " + v);
                     }
                 }
             });
 
-            // Handshake original (Limpio)
+            // PAUSA ANTES DEL COMANDO: Evita que el iPad bloquee la escritura
+            await new Promise(r => setTimeout(r, 500));
+            
             log("Activando sensores...");
             const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-            await writ.writeValue(cmd);
             
-            log("Listo. Súbete descalzo.");
+            // Intentar escritura con respaldo
+            try {
+                await writ.writeValue(cmd);
+            } catch (e) {
+                await writ.writeValueWithoutResponse(cmd);
+            }
+            
+            log("✅ Icono BT debe estar fijo. Súbete.");
 
         } catch (e) {
             log("❌ ERROR: " + e);
