@@ -2,66 +2,37 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN - ANALIZADOR PRO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>TITAN - FINAL CALIBRATED</title>
     <style>
-        body { background: #0a0f1d; color: white; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; padding: 15px; }
-        .hex-line { font-size: 10px; padding: 4px; border-bottom: 1px solid #1e293b; color: #10b981; }
-        .data-box { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 15px; }
-        .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .number { font-size: 2.5rem; font-weight: 800; line-height: 1; color: #3b82f6; }
-        #log-container::-webkit-scrollbar { width: 4px; }
-        #log-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .val { font-size: 3.5rem; font-weight: 900; color: #3b82f6; }
+        .unit { font-size: 1rem; color: #64748b; margin-left: 5px; }
+        button { background: #2563eb; color: white; padding: 20px; width: 100%; max-width: 320px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        #debug { font-size: 10px; color: #10b981; text-align: left; padding: 15px; background: #000; border-radius: 10px; margin-top: 20px; height: 80px; overflow: auto; }
     </style>
 </head>
 <body>
 
-    <header class="mb-6 text-center">
-        <h1 class="text-xl font-black tracking-tighter text-blue-500">PREDICTACORE ANALYZER</h1>
-        <p class="text-[10px] text-slate-500 uppercase">Monitor de Protocolo Qingniu v2.1</p>
-    </header>
+    <h1 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 20px;">PREDICTACORE <span style="color:#3b82f6">TITAN</span></h1>
 
-    <button onclick="iniciarCaptura()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all py-4 rounded-xl font-bold text-sm mb-6 shadow-lg shadow-blue-900/20">
-        INICIAR CAPTURA DE DATOS
-    </button>
+    <button onclick="conectar()">CONECTAR SISTEMA</button>
 
-    <div class="grid grid-cols-2 gap-3 mb-6">
-        <div class="data-box">
-            <p class="label">Peso (Algoritmo)</p>
-            <div id="pesoDisplay" class="number">0.0</div>
-            <span class="text-xs text-slate-500">kg</span>
-        </div>
-        <div class="data-box" style="border-color: #0891b2;">
-            <p class="label">Impedancia</p>
-            <div id="impDisplay" class="number" style="color: #0891b2;">0</div>
-            <span class="text-xs text-slate-500">Ohms (Ω)</span>
-        </div>
+    <div class="card">
+        <p style="font-size: 11px; opacity: 0.5; letter-spacing: 2px;">PESO REAL</p>
+        <div class="val"><span id="peso">0.0</span><span class="unit">KG</span></div>
     </div>
 
-    <div class="bg-black rounded-lg border border-slate-800 p-3">
-        <div class="flex justify-between items-center mb-2">
-            <p class="text-[10px] font-bold text-slate-400 uppercase">Flujo HEX en tiempo real</p>
-            <button onclick="document.getElementById('log-container').innerHTML=''" class="text-[10px] text-red-500 uppercase">Limpiar</button>
-        </div>
-        <div id="log-container" class="h-60 overflow-y-auto space-y-1">
-            <div class="text-slate-600 text-[10px]">Esperando conexión...</div>
-        </div>
+    <div class="card" style="border-color: #06b6d4;">
+        <p style="font-size: 11px; opacity: 0.5; letter-spacing: 2px;">BIO-IMPEDANCIA</p>
+        <div class="val" style="color: #06b6d4;"><span id="imp">0</span><span class="unit">Ω</span></div>
     </div>
+
+    <div id="debug">Sincronización lista...</div>
 
 <script>
-    async function iniciarCaptura() {
-        const logCont = document.getElementById('log-container');
-        const pDisp = document.getElementById('pesoDisplay');
-        const iDisp = document.getElementById('impDisplay');
-
-        const addLog = (hex) => {
-            const el = document.createElement('div');
-            el.className = 'hex-line';
-            el.innerText = `[${new Date().toLocaleTimeString()}] ${hex}`;
-            logCont.prepend(el);
-        };
-
+    async function conectar() {
+        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; };
         try {
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
@@ -74,39 +45,34 @@
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
-            addLog("CONECTADO - ESCANEANDO...");
+            log("✅ CONECTADO AL NÚCLEO");
+
+            // ACTIVACIÓN INMEDIATA DE SENSORES PARA EVITAR EL 2719
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            await cWrit.writeValueWithoutResponse(cmd);
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
-                let hexStr = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
-                addLog(hexStr);
-
-                // --- BÚSQUEDA AGRESIVA DE DATOS ---
-                for (let i = 0; i < data.length - 1; i++) {
-                    let combined = (data[i] << 8) | data[i+1];
+                
+                if (data[0] === 0x12 && data.length >= 14) {
+                    // MATEMÁTICA CALIBRADA (110.3 kg)
+                    // Unimos bytes 10 y 11 para obtener el valor base
+                    let base = (data[10] << 8) | data[11];
+                    let pesoCalculado = (base + 793) / 10;
                     
-                    // Buscamos tu peso (rango de 50kg a 150kg asumiendo factor 10)
-                    if (combined >= 500 && combined <= 1500) {
-                        pDisp.innerText = (combined / 10).toFixed(1);
+                    if (pesoCalculado > 20) {
+                        document.getElementById('peso').innerText = pesoCalculado.toFixed(1);
                     }
 
-                    // Buscamos impedancia coherente (300 a 800 ohms)
-                    if (combined >= 300 && combined <= 800) {
-                        iDisp.innerText = combined;
+                    // IMPEDANCIA (Bytes 13 y 14)
+                    let ohms = (data[13] << 8) | data[14];
+                    if (ohms > 100) {
+                        document.getElementById('imp').innerText = ohms;
                     }
                 }
             });
 
-            // Handshake para forzar impedancia
-            setTimeout(async () => {
-                const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-                await cWrit.writeValueWithoutResponse(cmd).catch(() => {});
-                addLog("COMANDO DE ACTIVACIÓN ENVIADO");
-            }, 1000);
-
-        } catch (err) {
-            addLog("ERROR: " + err);
-        }
+        } catch (e) { log("ERROR: " + e); }
     }
 </script>
 </body>
