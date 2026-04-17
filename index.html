@@ -1,72 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>REINICIO BÁSCULA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #0f172a; color: white; text-align: center; padding: 20px; font-family: sans-serif; }
-        #debug { font-size: 11px; text-align: left; background: #000; padding: 15px; height: 200px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; }
-    </style>
-</head>
 <body>
-
-    <h1 class="text-xl font-bold mb-6">REINICIO DE CONEXIÓN</h1>
-
-    <button onclick="conectar()" class="bg-blue-600 px-10 py-5 rounded-full font-bold mb-8 active:scale-95 shadow-xl">
-        BUSCAR BÁSCULA
-    </button>
-
-    <div id="debug" class="max-w-md mx-auto">Esperando interacción...</div>
-
+    <button onclick="test()" style="padding:50px; width:100%; font-size:20px;">FORZAR ENCENDIDO BT</button>
+    <div id="log"></div>
 <script>
-    async function conectar() {
-        const log = (m) => { document.getElementById('debug').innerHTML += `<br>> ${m}`; };
-        
+    async function test() {
+        const log = m => document.getElementById('log').innerHTML += "<br>" + m;
         try {
-            log("Iniciando escaneo...");
-            // Filtro por nombre exacto para forzar al chip
+            log("Buscando...");
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'QN-Scale' }],
+                acceptAllDevices: true,
                 optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
-
-            log("Encontrada. Conectando...");
+            log("Conectando a: " + device.name);
             const server = await device.gatt.connect();
+            log("✅ ¡CONECTADO! Mira el símbolo en la báscula.");
             
-            // Si llegamos aquí, el símbolo BT DEBE encenderse en la báscula
-            log("✅ GATT CONECTADO. El símbolo BT debería prender.");
-            
-            const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
-            const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
-            const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
-
-            await noti.startNotifications();
-            
-            noti.addEventListener('characteristicvaluechanged', (event) => {
-                let data = event.target.value;
-                if (data.getUint8(0) === 0x10) {
-                    let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
-                    log("⚖️ Peso: " + p.toFixed(2) + " kg");
-                    // ACK mínimo
-                    writ.writeValueWithoutResponse(new Uint8Array([0x1d])).catch(()=>{});
-                }
-                
-                // Buscar impedancia como en la Mac
-                for (let i = 0; i < data.byteLength - 1; i++) {
-                    let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
-                    if (v > 300 && v < 1000) log("⚡ IMPEDANCIA: " + v);
-                }
-            });
-
-            // Comando de activación básico
-            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-            await writ.writeValueWithoutResponse(cmd);
-            log("Comando enviado. Súbete.");
-
-        } catch (e) {
-            log("❌ ERROR: " + e);
-        }
+            // Si el símbolo prende, el problema de conexión está resuelto.
+        } catch (e) { log("Error: " + e); }
     }
 </script>
 </body>
