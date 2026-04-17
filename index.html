@@ -53,13 +53,8 @@
                 optionalServices: [SERVICE_UUID]
             });
 
-            device.addEventListener('gattserverdisconnected', () => {
-                log("❌ DESCONECTADO (Tiempo de espera agotado)");
-                document.getElementById('status').innerText = "Estado: DESCONECTADO";
-            });
-
             const server = await device.gatt.connect();
-            log("Conectado.");
+            log("✅ Conectado.");
             const service = await server.getPrimaryService(SERVICE_UUID);
             const characteristic = await service.getCharacteristic(NOTIFY_UUID);
             const writeChar = await service.getCharacteristic(WRITE_UUID);
@@ -78,36 +73,34 @@
                         let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
                         if (val > 350 && val < 900) {
                             document.getElementById('impedancia').innerText = val + " Ω";
-                            log("⚡ IMPEDANCIA RECIBIDA: " + val);
+                            log("⚡ DATOS RECIBIDOS: " + val + " Ohms");
                         }
                     }
                 }
             });
 
-            // SECUENCIA DE ACTIVACIÓN DE BAJA LATENCIA
-            log("Enviando comandos...");
-            
-            const cmdSync = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
+            // CAMBIO TÉCNICO: Comando de "Apertura de canal" antes del perfil de usuario
+            const cmdOpen = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
             const cmdUser = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
 
-            // En Bluefy/iOS, a veces writeValueWithoutResponse es más confiable para comandos rápidos
-            async function forzarEscritura(cmd) {
-                try {
-                    await writeChar.writeValueWithoutResponse(cmd);
-                } catch (e) {
-                    await writeChar.writeValue(cmd);
+            log("Enviando comandos...");
+            
+            // Enviamos con una cadencia que el iPad pueda procesar
+            await writeChar.writeValueWithoutResponse(cmdOpen);
+            await new Promise(r => setTimeout(r, 400));
+            await writeChar.writeValueWithoutResponse(cmdUser);
+            
+            // Re-enviamos el perfil cada 2 segundos para que la báscula no se apague
+            const keepAlive = setInterval(async () => {
+                if (device.gatt.connected) {
+                    try { await writeChar.writeValueWithoutResponse(cmdUser); } catch(e) {}
+                } else {
+                    clearInterval(keepAlive);
                 }
-            }
+            }, 2000);
 
-            // Enviamos ráfaga intercalada
-            await forzarEscritura(cmdSync);
-            await new Promise(r => setTimeout(r, 500));
-            await forzarEscritura(cmdUser);
-            await new Promise(r => setTimeout(r, 500));
-            await forzarEscritura(cmdUser); // Re-confirmación
-
-            log("Listo. Súbete ahora.");
-            document.getElementById('status').innerText = "ESPERANDO PESO E IMPEDANCIA...";
+            document.getElementById('status').innerText = "ESPERANDO DATOS...";
+            log("Súbete descalzo.");
 
         } catch (error) {
             log("ERROR: " + error);
