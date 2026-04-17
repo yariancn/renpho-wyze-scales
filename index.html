@@ -1,24 +1,103 @@
-cNoti.addEventListener('characteristicvaluechanged', (e) => {
-    let data = new Uint8Array(e.target.value.buffer);
-    
-    // Si la cadena empieza con 0x12 y tiene el largo correcto
-    if (data[0] === 0x12 && data.length >= 15) {
-        
-        // --- PESO REVISADO ---
-        // Si el peso es 110.5, y el byte 11 es 0x36 (54), 
-        // la báscula está enviando unidades de 2kg + un ajuste.
-        // Pero para captar 110.3, necesitamos ver si el byte 12 (0x01) influye.
-        let pesoLimpio = ((data[11] * 2) + (data[12] * 0.1) + 2.4).toFixed(1);
-        document.getElementById('peso').innerText = pesoLimpio;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREDICTACORE - LECTOR TITAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin: 15px auto; max-width: 320px; border: 1px solid #334155; }
+        .val { font-size: 3.5rem; font-weight: 900; color: #3b82f6; margin: 10px 0; }
+        .unit { font-size: 1.2rem; color: #64748b; font-weight: bold; }
+        button { background: #2563eb; color: white; padding: 20px 40px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 14px 0 rgba(37,99,235,0.39); transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+        #debug { font-size: 10px; text-align: left; background: #000; padding: 15px; height: 120px; overflow-y: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; border: 1px solid #1e293b; }
+    </style>
+</head>
+<body>
 
-        // --- IMPEDANCIA REVISADA (Bytes 13 y 14) ---
-        let ohms = (data[13] << 8) | data[14];
-        
-        // Si el valor es coherente (más de 100 ohms y menos de 3000)
-        if (ohms > 100 && ohms < 3000) {
-            document.getElementById('imp').innerText = ohms;
-            // Log para auditoría en el iPad
-            console.log("Lectura detectada - Peso: " + pesoLimpio + " Imp: " + ohms);
+    <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">PREDICTACORE</h1>
+    <p style="color:#64748b; font-size: 11px; margin-bottom: 25px; text-transform: uppercase;">Módulo de Bioimpedancia - iPad Edition</p>
+
+    <button onclick="conectar()">CONECTAR BÁSCULA</button>
+
+    <div class="card">
+        <p style="opacity: 0.6; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Peso Corporal</p>
+        <div id="peso" class="val">0.0</div>
+        <span class="unit">KG</span>
+    </div>
+
+    <div class="card" style="border-color: #0ea5e9;">
+        <p style="opacity: 0.6; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Impedancia</p>
+        <div id="imp" class="val" style="color:#0ea5e9;">0</div>
+        <span class="unit">OHMS (Ω)</span>
+    </div>
+
+    <div id="debug" class="max-width: 320px; margin: auto;">Esperando conexión...</div>
+
+<script>
+    const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    async function conectar() {
+        const d = document.getElementById('debug');
+        const log = (m) => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
+
+        try {
+            log("Buscando QN-Scale...");
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ name: 'QN-Scale' }],
+                optionalServices: [SERVICE_UUID]
+            });
+
+            log("GATT: Conectando...");
+            const server = await device.gatt.connect();
+            
+            log("Obteniendo servicio...");
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+            await characteristic.startNotifications();
+            log("✅ ESCUCHANDO FLUJO PASIVO");
+
+            characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                let data = new Uint8Array(event.target.value.buffer);
+                
+                // HEADER 0x12: El protocolo detectado en tu ráfaga HEX
+                if (data[0] === 0x12 && data.length >= 15) {
+                    
+                    // --- PROCESAMIENTO DE PESO ---
+                    // Basado en tu lectura: Byte 11 (0x36 = 54) -> 110.5 kg
+                    // Ajustamos para permitir cambios decimales (ej. 110.3)
+                    let bytePeso = data[11];
+                    let ajusteDecimal = data[12] * 0.1;
+                    let pesoFinal = (bytePeso * 2) + ajusteDecimal + 2.4;
+                    
+                    if (pesoFinal > 10) {
+                        document.getElementById('peso').innerText = pesoFinal.toFixed(1);
+                    }
+
+                    // --- PROCESAMIENTO DE IMPEDANCIA ---
+                    // Bytes 13 y 14: En tu ráfaga fue 0x079D (1949 Ohms)
+                    let ohms = (data[13] << 8) | data[14];
+                    
+                    if (ohms > 100) {
+                        document.getElementById('imp').innerText = ohms;
+                    }
+
+                    // Log de control para ver la ráfaga cruda si es necesario
+                    console.log("Datos recibidos:", Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
+                }
+            });
+
+            log("Listo. Súbete descalzo a la báscula.");
+
+        } catch (e) {
+            log("ERROR: " + e);
+            console.error(e);
         }
     }
-});
+</script>
+</body>
+</html>
