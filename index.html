@@ -1,74 +1,25 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>TITAN - LOCALIZADOR 110</title>
-</head>
-<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
+// ... (dentro del listener de cambios)
+cNoti.addEventListener('characteristicvaluechanged', (e) => {
+    let data = new Uint8Array(e.target.value.buffer);
+    
+    if (data.length >= 14) {
+        // Probamos la combinación más lógica para protocolos de alta precisión (Bytes 9 y 10)
+        // En tu ráfaga: data[9]=0x36, data[10]=0x01
+        // Si los invertimos o los sumamos de forma desplazada:
+        
+        let pesoAlterno = ((data[9] << 8) | data[10]) / 10; 
+        let pesoInverso = ((data[10] << 8) | data[9]) / 10;
 
-    <button onclick="conectar()" style="padding:25px; background:orange; color:black; font-weight:bold; border-radius:15px; border:none;">
-        BUSCAR VALOR 110
-    </button>
+        // ESTO NOS DIRÁ LA VERDAD:
+        log(`Prueba A (9-10): ${pesoAlterno} | Prueba B (10-9): ${pesoInverso}`);
 
-    <div style="font-size:30px; margin:20px; color: #00ff00;">
-        VALOR DETECTADO: <span id="peso">?</span><br>
-        UBICACIÓN: <span id="pos">?</span>
-    </div>
-
-    <div id="debug" style="font-size:10px; color:#ccc; text-align:left; padding:20px; font-family:monospace; height:300px; overflow:auto;"></div>
-
-<script>
-    async function conectar() {
-        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; };
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'QN-Scale' }],
-                optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
-            });
-
-            const server = await device.gatt.connect();
-            const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
-            const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-
-            await cNoti.startNotifications();
-            log("✅ Escaneando bytes para encontrar el 110...");
-
-            cNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let data = new Uint8Array(e.target.value.buffer);
-                log("HEX: " + Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
-
-                for (let i = 0; i < data.length; i++) {
-                    // 1. ¿Es un solo byte?
-                    if (data[i] >= 108 && data[i] <= 112) {
-                        document.getElementById('peso').innerText = data[i];
-                        document.getElementById('pos').innerText = "Byte único en posición " + i;
-                        log("🎯 ¡ENCONTRADO! Byte " + i + " vale " + data[i]);
-                    }
-
-                    // 2. ¿Es la suma de dos bytes contiguos?
-                    if (i < data.length - 1) {
-                        let suma = data[i] + data[i+1];
-                        if (suma >= 108 && suma <= 112) {
-                            document.getElementById('peso').innerText = suma;
-                            document.getElementById('pos').innerText = "Suma de bytes " + i + " y " + (i+1);
-                            log("🎯 ¡ENCONTRADO! Suma de " + i + " y " + (i+1) + " es " + suma);
-                        }
-                    }
-
-                    // 3. ¿Es el par de bytes como entero (Big Endian)?
-                    if (i < data.length - 1) {
-                        let val = (data[i] << 8) | data[i+1];
-                        if (val >= 108 && val <= 112) {
-                            document.getElementById('peso').innerText = val;
-                            document.getElementById('pos').innerText = "Entero en posición " + i;
-                            log("🎯 ¡ENCONTRADO! Entero en " + i + " vale " + val);
-                        }
-                    }
-                }
-            });
-
-        } catch (e) { log("ERR: " + e); }
+        // Si el peso es 110.5, uno de estos cálculos debe dar 110.5 exactamente.
+        // Si el peso cambia a 110.3, el código lo detectará automáticamente.
+        
+        if (pesoAlterno > 80 && pesoAlterno < 150) {
+            document.getElementById('peso').innerText = pesoAlterno.toFixed(1);
+        } else if (pesoInverso > 80 && pesoInverso < 150) {
+            document.getElementById('peso').innerText = pesoInverso.toFixed(1);
+        }
     }
-</script>
-</body>
-</html>
+});
