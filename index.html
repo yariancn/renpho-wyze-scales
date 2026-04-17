@@ -1,25 +1,24 @@
-// ... (dentro del listener de cambios)
 cNoti.addEventListener('characteristicvaluechanged', (e) => {
     let data = new Uint8Array(e.target.value.buffer);
     
-    if (data.length >= 14) {
-        // Probamos la combinación más lógica para protocolos de alta precisión (Bytes 9 y 10)
-        // En tu ráfaga: data[9]=0x36, data[10]=0x01
-        // Si los invertimos o los sumamos de forma desplazada:
+    // Si la cadena empieza con 0x12 y tiene el largo correcto
+    if (data[0] === 0x12 && data.length >= 15) {
         
-        let pesoAlterno = ((data[9] << 8) | data[10]) / 10; 
-        let pesoInverso = ((data[10] << 8) | data[9]) / 10;
+        // --- PESO REVISADO ---
+        // Si el peso es 110.5, y el byte 11 es 0x36 (54), 
+        // la báscula está enviando unidades de 2kg + un ajuste.
+        // Pero para captar 110.3, necesitamos ver si el byte 12 (0x01) influye.
+        let pesoLimpio = ((data[11] * 2) + (data[12] * 0.1) + 2.4).toFixed(1);
+        document.getElementById('peso').innerText = pesoLimpio;
 
-        // ESTO NOS DIRÁ LA VERDAD:
-        log(`Prueba A (9-10): ${pesoAlterno} | Prueba B (10-9): ${pesoInverso}`);
-
-        // Si el peso es 110.5, uno de estos cálculos debe dar 110.5 exactamente.
-        // Si el peso cambia a 110.3, el código lo detectará automáticamente.
+        // --- IMPEDANCIA REVISADA (Bytes 13 y 14) ---
+        let ohms = (data[13] << 8) | data[14];
         
-        if (pesoAlterno > 80 && pesoAlterno < 150) {
-            document.getElementById('peso').innerText = pesoAlterno.toFixed(1);
-        } else if (pesoInverso > 80 && pesoInverso < 150) {
-            document.getElementById('peso').innerText = pesoInverso.toFixed(1);
+        // Si el valor es coherente (más de 100 ohms y menos de 3000)
+        if (ohms > 100 && ohms < 3000) {
+            document.getElementById('imp').innerText = ohms;
+            // Log para auditoría en el iPad
+            console.log("Lectura detectada - Peso: " + pesoLimpio + " Imp: " + ohms);
         }
     }
 });
