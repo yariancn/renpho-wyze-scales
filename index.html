@@ -2,82 +2,71 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN TEST FINAL</title>
+    <title>REINICIO BÁSCULA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; text-align: center; padding: 20px; font-family: sans-serif; }
-        .card { background: #1e293b; border-radius: 15px; padding: 20px; margin-bottom: 10px; border: 1px solid #334155; }
-        #debug { font-size: 10px; text-align: left; background: #000; padding: 10px; height: 150px; overflow: auto; color: #10b981; font-family: monospace; }
+        #debug { font-size: 11px; text-align: left; background: #000; padding: 15px; height: 200px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <h1 class="text-xl font-bold mb-4">REESTABLECER CONEXIÓN</h1>
+    <h1 class="text-xl font-bold mb-6">REINICIO DE CONEXIÓN</h1>
 
-    <button onclick="iniciar()" class="bg-blue-600 px-10 py-5 rounded-full font-bold mb-6 active:scale-95 shadow-lg">
-        CONECTAR BÁSCULA
+    <button onclick="conectar()" class="bg-blue-600 px-10 py-5 rounded-full font-bold mb-8 active:scale-95 shadow-xl">
+        BUSCAR BÁSCULA
     </button>
 
-    <div class="max-w-xs mx-auto">
-        <div class="card">
-            <p class="text-xs opacity-50">PESO</p>
-            <p id="peso" class="text-3xl font-black text-blue-400">0.00 kg</p>
-        </div>
-        <div class="card">
-            <p class="text-xs opacity-50">IMPEDANCIA</p>
-            <p id="impedancia" class="text-3xl font-black text-blue-400">0 Ω</p>
-        </div>
-    </div>
-
-    <div id="debug" class="max-w-xs mx-auto mt-4 rounded">Logs...</div>
+    <div id="debug" class="max-w-md mx-auto">Esperando interacción...</div>
 
 <script>
-    async function iniciar() {
-        const d = document.getElementById('debug');
-        const log = (m) => { d.innerHTML += `<br>> ${m}`; d.scrollTop = d.scrollHeight; };
-
+    async function conectar() {
+        const log = (m) => { document.getElementById('debug').innerHTML += `<br>> ${m}`; };
+        
         try {
-            log("Buscando...");
+            log("Iniciando escaneo...");
+            // Filtro por nombre exacto para forzar al chip
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
 
+            log("Encontrada. Conectando...");
             const server = await device.gatt.connect();
+            
+            // Si llegamos aquí, el símbolo BT DEBE encenderse en la báscula
+            log("✅ GATT CONECTADO. El símbolo BT debería prender.");
+            
             const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
             const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
             const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
 
             await noti.startNotifications();
-            log("✅ Notificaciones listas.");
-
+            
             noti.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
-                let head = data.getUint8(0);
-
-                if (head === 0x10) {
+                if (data.getUint8(0) === 0x10) {
                     let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
-                    document.getElementById('peso').innerText = p.toFixed(2) + " kg";
-                    // ACK silencioso para desbloquear impedancia
+                    log("⚖️ Peso: " + p.toFixed(2) + " kg");
+                    // ACK mínimo
                     writ.writeValueWithoutResponse(new Uint8Array([0x1d])).catch(()=>{});
                 }
-
+                
+                // Buscar impedancia como en la Mac
                 for (let i = 0; i < data.byteLength - 1; i++) {
                     let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
-                    if (v > 350 && v < 900) {
-                        document.getElementById('impedancia').innerText = v + " Ω";
-                        log("⚡ IMPEDANCIA: " + v);
-                    }
+                    if (v > 300 && v < 1000) log("⚡ IMPEDANCIA: " + v);
                 }
             });
 
-            // Handshake único y limpio
-            log("Enviando comando...");
+            // Comando de activación básico
             const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
             await writ.writeValueWithoutResponse(cmd);
-            
-            log("Súbete descalzo.");
-        } catch (e) { log("ERROR: " + e); }
+            log("Comando enviado. Súbete.");
+
+        } catch (e) {
+            log("❌ ERROR: " + e);
+        }
     }
 </script>
 </body>
