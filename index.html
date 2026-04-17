@@ -2,77 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - CAPTURA DE PESO</title>
+    <title>TITAN - CAPTURA TOTAL</title>
 </head>
-<body style="background:#0a0f1d; color:white; text-align:center; font-family:sans-serif; padding-top:30px;">
+<body style="background:#0f172a; color:white; text-align:center; font-family:sans-serif; padding:20px;">
 
-    <h2 style="font-size:16px; opacity:0.7;">REPORTE TITAN: CAPTURA DE FLUJO</h2>
+    <h2 style="font-size:14px; opacity:0.6; margin-bottom:20px;">PREDICTACORE: CAPTURA EN TIEMPO REAL</h2>
     
-    <button onclick="conectar()" style="padding:20px; background:#2563eb; color:white; border-radius:15px; border:none; font-weight:bold; width:80%;">
-        CONECTAR Y ESCUCHAR
+    <button onclick="conectar()" style="padding:20px; background:#2563eb; color:white; border-radius:50px; border:none; font-weight:bold; width:100%; max-width:300px; box-shadow: 0 4px 15px rgba(37,99,235,0.4);">
+        CONECTAR BÁSCULA
     </button>
 
-    <div style="margin:30px;">
-        <div style="background:#161e31; padding:20px; border-radius:15px; margin-bottom:10px;">
-            <p style="font-size:12px; opacity:0.5;">PESO DETECTADO</p>
-            <span id="peso" style="font-size:40px; font-weight:bold; color:#3b82f6;">0.00</span> kg
+    <div style="margin:30px auto; max-width:320px;">
+        <div style="background:#1e293b; padding:20px; border-radius:20px; margin-bottom:15px; border:1px solid #334155;">
+            <p style="font-size:11px; opacity:0.5; letter-spacing:1px;">PESO</p>
+            <span id="peso" style="font-size:45px; font-weight:900; color:#3b82f6;">0.00</span> <span style="font-size:18px;">kg</span>
         </div>
-        <div style="background:#161e31; padding:20px; border-radius:15px;">
-            <p style="font-size:12px; opacity:0.5;">IMPEDANCIA DETECTADA</p>
-            <span id="imp" style="font-size:40px; font-weight:bold; color:#06b6d4;">0</span> Ω
+        <div style="background:#1e293b; padding:20px; border-radius:20px; border:1px solid #334155;">
+            <p style="font-size:11px; opacity:0.5; letter-spacing:1px;">IMPEDANCIA</p>
+            <span id="imp" style="font-size:45px; font-weight:900; color:#06b6d4;">0</span> <span style="font-size:18px;">Ω</span>
         </div>
     </div>
 
-    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:150px; overflow:auto;"></div>
+    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:15px; font-family:monospace; background:black; border-radius:10px; height:120px; overflow:auto; max-width:320px; margin:auto;">Logs...</div>
 
 <script>
     async function conectar() {
-        const log = m => { const d = document.getElementById('debug'); d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
+        const d = document.getElementById('debug');
+        const log = m => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
+        
         try {
-            log("Buscando QN-Scale...");
+            log("Buscando...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
 
             const server = await device.gatt.connect();
+            log("✅ GATT Conectado.");
+
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
-            // ESCUCHA INMEDIATA
             await cNoti.startNotifications();
-            log("✅ ESCUCHANDO FLUJO...");
+
+            // Comando de activación INMEDIATO
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            await cWrit.writeValueWithoutResponse(cmd);
+            log("Activación enviada.");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let d = e.target.value;
-                let raw = new Uint8Array(d.buffer);
+                let data = e.target.value;
+                let raw = new Uint8Array(data.buffer);
                 
-                // 1. Prioridad: Peso (0x10)
-                if (raw[0] === 0x10) {
-                    let p = ((raw[3] << 8) | raw[4]) / 100;
-                    if (p > 0) {
-                        document.getElementById('peso').innerText = p.toFixed(2);
-                        log("⚖️ Peso recibido: " + p);
+                // Procesar cada byte del paquete (Scan agresivo)
+                for (let i = 0; i < raw.length; i++) {
+                    // Si encontramos el Header de Peso (0x10)
+                    if (raw[i] === 0x10 && i + 4 < raw.length) {
+                        let p = ((raw[i+3] << 8) | raw[i+4]) / 100;
+                        if (p > 5) { // Filtro para ignorar ruidos menores a 5kg
+                            document.getElementById('peso').innerText = p.toFixed(2);
+                        }
                     }
-                }
-                
-                // 2. Escaneo de Impedancia (lo que ya te funcionó 4 veces)
-                for (let i = 0; i < raw.length - 1; i++) {
-                    let v = (raw[i] << 8) | raw[i+1];
-                    if (v > 350 && v < 950) {
-                        document.getElementById('imp').innerText = v;
-                        log("⚡ OHMS: " + v);
+                    
+                    // Si encontramos Impedancia (Ohms)
+                    if (i + 1 < raw.length) {
+                        let v = (raw[i] << 8) | raw[i+1];
+                        if (v > 380 && v < 900) {
+                            document.getElementById('imp').innerText = v;
+                        }
                     }
                 }
             });
 
-            // Handshake con delay para no bloquear el peso
-            setTimeout(async () => {
-                log("Enviando activación de sensores...");
-                const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-                await cWrit.writeValueWithoutResponse(cmd);
-            }, 2000);
+            log("Listo. Písala descalzo.");
 
         } catch (e) { log("ERR: " + e); }
     }
