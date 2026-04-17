@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TITAN BLUETOOTH TEST</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .data-card { background: #1e293b; border-radius: 20px; padding: 20px; margin: 10px 0; border: 1px solid #334155; }
+        .val { font-size: 2rem; font-weight: 900; color: #3b82f6; }
+    </style>
+</head>
+<body>
+
+    <h1 class="text-xl font-black mb-6">PREDICTACORE <br> <span class="text-blue-500">IPAD BLUETOOTH TEST</span></h1>
+
+    <button onclick="conectarBascula()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold shadow-lg mb-8">
+        CONECTAR BÁSCULA
+    </button>
+
+    <div id="status" class="text-gray-400 text-sm mb-4">Estado: Esperando conexión...</div>
+
+    <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
+        <div class="data-card">
+            <p class="text-xs uppercase opacity-50">Peso Actual</p>
+            <p id="peso" class="val">0.00 kg</p>
+        </div>
+        <div class="data-card">
+            <p class="text-xs uppercase opacity-50">Impedancia (Bio-resistencia)</p>
+            <p id="impedancia" class="val">0 Ω</p>
+        </div>
+    </div>
+
+    <div id="debug" class="mt-8 text-[10px] text-gray-600 font-mono text-left bg-black p-4 rounded overflow-auto h-40">
+        Logs del sistema...
+    </div>
+
+<script>
+    const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
+    const NOTIFY_UUID  = "0000ffe1-0000-1000-8000-00805f9b34fb";
+    const WRITE_UUID   = "0000ffe3-0000-1000-8000-00805f9b34fb";
+
+    function log(msg) {
+        const d = document.getElementById('debug');
+        d.innerHTML += "> " + msg + "<br>";
+        d.scrollTop = d.scrollHeight;
+    }
+
+    async function conectarBascula() {
+        try {
+            log("Buscando báscula...");
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ name: 'QN-Scale' }],
+                optionalServices: [SERVICE_UUID]
+            });
+
+            log("Conectando a " + device.name);
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            const characteristic = await service.getCharacteristic(NOTIFY_UUID);
+            const writeChar = await service.getCharacteristic(WRITE_UUID);
+
+            document.getElementById('status').innerText = "Estado: CONECTADO ✅";
+            log("Suscrito a notificaciones");
+
+            await characteristic.startNotifications();
+            characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                let data = event.target.value;
+                let header = data.getUint8(0);
+
+                // Lógica de Peso (0x10)
+                if (header === 0x10) {
+                    let peso = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
+                    document.getElementById('peso').innerText = peso.toFixed(2) + " kg";
+                } 
+                // Lógica de Impedancia (Escaneo de bytes similar al de Python)
+                else {
+                    for (let i = 0; i < data.byteLength - 1; i++) {
+                        let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
+                        if (val > 350 && val < 900) {
+                            document.getElementById('impedancia').innerText = val + " Ω";
+                            log("⚡ Impedancia detectada: " + val);
+                        }
+                    }
+                }
+            });
+
+            // Comando de activación (Handshake) que usamos en Python
+            log("Enviando comando de activación...");
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            await writeChar.writeValue(cmd);
+            
+            log("¡Súbete a la báscula descalzo!");
+
+        } catch (error) {
+            log("ERROR: " + error);
+            console.error(error);
+        }
+    }
+</script>
+</body>
+</html>
