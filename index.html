@@ -2,41 +2,41 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - CALIBRACIÓN FINAL</title>
+    <title>TITAN - COMUNICACIÓN REAL</title>
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1e293b; border-radius: 20px; padding: 30px; margin: 20px auto; max-width: 320px; border: 1px solid #334155; }
         .val { font-size: 4rem; font-weight: 900; color: #3b82f6; line-height: 1; }
         .label { font-size: 10px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; }
-        #debug { font-size: 10px; text-align: left; background: #000; padding: 15px; height: 120px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; }
-        button { background: #2563eb; color: white; padding: 20px; width: 100%; max-width: 320px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
+        #debug { font-size: 10px; text-align: left; background: #000; padding: 15px; height: 150px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 10px; margin-top: 20px; }
+        button { background: #2563eb; color: white; padding: 20px; width: 100%; max-width: 320px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h1 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 5px;">PREDICTACORE</h1>
-    <p style="color:#64748b; font-size: 11px; margin-bottom: 30px;">PROCESADOR DE FLUJO TITAN</p>
+    <p style="color:#64748b; font-size: 11px; margin-bottom: 30px;">PROTOCOLO DESBLOQUEADO</p>
 
-    <button onclick="conectar()">CAPTURAR PESO Y OHMS</button>
+    <button onclick="conectar()">CONECTAR Y PESAR</button>
 
     <div class="card">
-        <p class="label">Peso Estabilizado</p>
+        <p class="label">Peso Real</p>
         <div id="peso" class="val">0.0</div>
-        <p style="color: #3b82f6; font-weight: bold; margin-top: 5px;">KG</p>
+        <p style="color: #3b82f6; font-weight: bold; margin-top: 10px;">KG</p>
     </div>
 
     <div class="card" style="border-color: #06b6d4;">
         <p class="label">Impedancia</p>
         <div id="imp" class="val" style="color: #06b6d4; font-size: 2.5rem;">0</div>
-        <p style="color: #06b6d4; font-weight: bold; margin-top: 5px;">OHMS (Ω)</p>
+        <p style="color: #06b6d4; font-weight: bold; margin-top: 5px;">Ω</p>
     </div>
 
-    <div id="debug">Iniciando sistema de escucha...</div>
+    <div id="debug">Esperando apertura de canal...</div>
 
 <script>
     async function conectar() {
+        const log = m => { document.getElementById('debug').innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
         const d = document.getElementById('debug');
-        const log = m => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
         
         try {
             const device = await navigator.bluetooth.requestDevice({
@@ -50,53 +50,55 @@
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
-            log("✅ CONECTADO. Acumulando ráfagas finales...");
+            log("✅ CONECTADO");
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
                 
-                // Mostrar HEX para referencia de depuración
-                log("Ráfaga: " + Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase());
+                // IGNORAMOS EL LATIDO FALSO (0x12)
+                if (data[0] !== 0x12) {
+                    let hex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+                    log("DATA REAL: " + hex);
 
-                if (data.length >= 14) {
-                    // --- NUEVA LÓGICA DE EXTRACCIÓN ---
-                    // En las básculas QN, el peso real es el valor de los bytes 11 y 12
-                    // Pero divididos por un factor de resolución de 0.05 o 0.1
-                    // Tu ráfaga decía: ... 36 01 36 00 ...
-                    // 0x36 es 54. 
-                    
-                    // Probamos el estándar de peso en el byte 11 con offset dinámico
-                    let base = data[11]; // El byte que vimos que era '36'
-                    let pesoCalculado = 0;
+                    // Escaneo dinámico en los paquetes reales
+                    for (let i = 0; i < data.length - 1; i++) {
+                        let val = (data[i] << 8) | data[i+1];
+                        
+                        // Si el valor tiene lógica de peso (ej. 1110 -> 111.0 kg o 11100 -> 111.00 kg)
+                        let p1 = val / 10;
+                        let p2 = val / 100;
+                        
+                        if (p1 > 30 && p1 < 200) {
+                            document.getElementById('peso').innerText = p1.toFixed(1);
+                        } else if (p2 > 30 && p2 < 200) {
+                            document.getElementById('peso').innerText = p2.toFixed(1);
+                        }
 
-                    // Si la báscula marcó 110.3 y tenemos un 54 (0x36)
-                    // 54 * 2 = 108. Nos faltan 2.3.
-                    // Si el peso es 111.0 y tenemos un 54 (0x36)
-                    // 54 * 2 = 108. Nos faltan 3.0.
-                    
-                    // LA VERDAD ESTÁ EN EL BYTE 2 Y 3 (15 44):
-                    // 15 44 en Hex es 5444. 5444 / 50 = 108.88 (Cerca!)
-                    // 5444 / 49.3 = 110.4 (Muy cerca!)
-                    
-                    let v23 = (data[2] << 8) | data[3];
-                    if (v23 > 1000) {
-                        pesoCalculado = v23 / 50 + 1.4; // Ajuste basado en 110.3
-                        document.getElementById('peso').innerText = pesoCalculado.toFixed(1);
-                    }
-
-                    // IMPEDANCIA (Bytes 13 y 14)
-                    let ohms = (data[13] << 8) | data[14];
-                    if (ohms > 100) {
-                        document.getElementById('imp').innerText = ohms;
+                        // Si el valor tiene lógica de Ohms humanos
+                        if (val > 350 && val < 950) {
+                            document.getElementById('imp').innerText = val;
+                        }
                     }
                 }
             });
 
-            // Enviar activación de sensores con delay
+            // CREACIÓN DEL HANDSHAKE CON CHECKSUM MATEMÁTICAMENTE PERFECTO
             setTimeout(() => {
-                const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+                let cmd = new Uint8Array(9);
+                cmd[0] = 0x13; cmd[1] = 0x09; cmd[2] = 0x15; cmd[3] = 0x01; // Headers
+                cmd[4] = 180; // Altura
+                cmd[5] = 50;  // Edad
+                cmd[6] = 0x01; // Género
+                cmd[7] = 0x00;
+                
+                // Calculamos el Checksum real
+                let sum = 0;
+                for(let i=0; i<8; i++) sum += cmd[i];
+                cmd[8] = sum & 0xFF; // El resultado es 0x19 (25), no el viejo 0x42
+
                 cWrit.writeValueWithoutResponse(cmd).catch(()=>{});
-            }, 1200);
+                log("Handshake enviado con Checksum: " + cmd[8].toString(16).toUpperCase());
+            }, 1000);
 
         } catch (e) { log("ERROR: " + e); }
     }
