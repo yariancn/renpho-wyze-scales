@@ -2,95 +2,81 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN RECOVERY - IPAD</title>
+    <title>TITAN TEST FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0a0f1d; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .data-card { background: #161e31; border-radius: 20px; padding: 20px; margin: 10px 0; border: 1px solid #2d3a54; }
-        .val { font-size: 2.5rem; font-weight: 900; color: #3b82f6; }
-        #debug { font-size: 10px; text-align: left; background: #000; padding: 10px; border-radius: 10px; height: 180px; overflow-y: auto; font-family: monospace; color: #10b981; }
+        body { background: #0f172a; color: white; text-align: center; padding: 20px; font-family: sans-serif; }
+        .card { background: #1e293b; border-radius: 15px; padding: 20px; margin-bottom: 10px; border: 1px solid #334155; }
+        #debug { font-size: 10px; text-align: left; background: #000; padding: 10px; height: 150px; overflow: auto; color: #10b981; font-family: monospace; }
     </style>
 </head>
 <body>
 
-    <h1 class="text-xl font-black mb-6 uppercase">PredictaCore <br> <span class="text-blue-500">Protocolo QN-iOS</span></h1>
+    <h1 class="text-xl font-bold mb-4">REESTABLECER CONEXIÓN</h1>
 
-    <button onclick="conectar()" class="bg-blue-600 px-8 py-4 rounded-full font-bold mb-8 active:scale-95 shadow-lg shadow-blue-500/20">
+    <button onclick="iniciar()" class="bg-blue-600 px-10 py-5 rounded-full font-bold mb-6 active:scale-95 shadow-lg">
         CONECTAR BÁSCULA
     </button>
 
-    <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
-        <div class="data-card">
+    <div class="max-w-xs mx-auto">
+        <div class="card">
             <p class="text-xs opacity-50">PESO</p>
-            <p id="peso" class="val">0.00 kg</p>
+            <p id="peso" class="text-3xl font-black text-blue-400">0.00 kg</p>
         </div>
-        <div class="data-card">
+        <div class="card">
             <p class="text-xs opacity-50">IMPEDANCIA</p>
-            <p id="impedancia" class="val">0 Ω</p>
+            <p id="impedancia" class="text-3xl font-black text-blue-400">0 Ω</p>
         </div>
     </div>
 
-    <div class="max-w-sm mx-auto mt-6 text-left">
-        <p class="text-[10px] opacity-40 mb-1">TERMINAL DE DATOS</p>
-        <div id="debug">Esperando...</div>
-    </div>
+    <div id="debug" class="max-w-xs mx-auto mt-4 rounded">Logs...</div>
 
 <script>
-    const UUID_SERV = "0000ffe0-0000-1000-8000-00805f9b34fb";
-    const UUID_NOTI = "0000ffe1-0000-1000-8000-00805f9b34fb";
-    const UUID_WRIT = "0000ffe3-0000-1000-8000-00805f9b34fb";
+    async function iniciar() {
+        const d = document.getElementById('debug');
+        const log = (m) => { d.innerHTML += `<br>> ${m}`; d.scrollTop = d.scrollHeight; };
 
-    function log(m) { const d = document.getElementById('debug'); d.innerHTML += `<br>> ${m}`; d.scrollTop = d.scrollHeight; }
-
-    async function conectar() {
         try {
-            log("Buscando báscula...");
+            log("Buscando...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
-                optionalServices: [UUID_SERV]
+                optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
 
             const server = await device.gatt.connect();
-            const service = await server.getPrimaryService(UUID_SERV);
-            const characteristic = await service.getCharacteristic(UUID_NOTI);
-            const writeChar = await service.getCharacteristic(UUID_WRIT);
+            const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
+            const noti = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
+            const writ = await service.getCharacteristic("0000ffe3-0000-1000-8000-00805f9b34fb");
 
-            log("✅ Conexión establecida.");
+            await noti.startNotifications();
+            log("✅ Notificaciones listas.");
 
-            // COMANDOS DE PROTOCOLO
-            const cmdUser = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-            const cmdAck  = new Uint8Array([0x1d]); // El secreto: Comando de ACK (Acknowledge)
-
-            await characteristic.startNotifications();
-
-            characteristic.addEventListener('characteristicvaluechanged', async (event) => {
+            noti.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
-                let header = data.getUint8(0);
+                let head = data.getUint8(0);
 
-                // Si recibimos peso, enviamos el ACK inmediatamente
-                if (header === 0x10) {
+                if (head === 0x10) {
                     let p = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
                     document.getElementById('peso').innerText = p.toFixed(2) + " kg";
-                    
-                    // Respondemos a la báscula que recibimos el peso (Esto desbloquea la impedancia)
-                    try { await writeChar.writeValueWithoutResponse(cmdAck); } catch(e) {}
-                } 
-                
-                // Buscar impedancia en cualquier paquete
+                    // ACK silencioso para desbloquear impedancia
+                    writ.writeValueWithoutResponse(new Uint8Array([0x1d])).catch(()=>{});
+                }
+
                 for (let i = 0; i < data.byteLength - 1; i++) {
                     let v = (data.getUint8(i) << 8) | data.getUint8(i+1);
                     if (v > 350 && v < 900) {
                         document.getElementById('impedancia').innerText = v + " Ω";
-                        log("⚡ ¡IMPEDANCIA RECIBIDA!: " + v);
+                        log("⚡ IMPEDANCIA: " + v);
                     }
                 }
             });
 
-            // Handshake inicial
-            log("Activando sensores...");
-            await writeChar.writeValueWithoutResponse(cmdUser);
+            // Handshake único y limpio
+            log("Enviando comando...");
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            await writ.writeValueWithoutResponse(cmd);
             
-            log("¡Súbete descalzo!");
+            log("Súbete descalzo.");
         } catch (e) { log("ERROR: " + e); }
     }
 </script>
