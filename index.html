@@ -54,13 +54,12 @@
             });
 
             const server = await device.gatt.connect();
-            log("Conectado. Obteniendo servicios...");
+            log("Conectado.");
             const service = await server.getPrimaryService(SERVICE_UUID);
             const characteristic = await service.getCharacteristic(NOTIFY_UUID);
             const writeChar = await service.getCharacteristic(WRITE_UUID);
 
             await characteristic.startNotifications();
-            log("Notificaciones activas.");
 
             characteristic.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
@@ -72,28 +71,43 @@
                 } else {
                     for (let i = 0; i < data.byteLength - 1; i++) {
                         let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
+                        // Filtro de impedancia detectado en Mac
                         if (val > 350 && val < 900) {
                             document.getElementById('impedancia').innerText = val + " Ω";
-                            log("⚡ DATOS RECIBIDOS: " + val + " Ohms");
+                            log("⚡ IMPEDANCIA DETECTADA: " + val);
                         }
                     }
                 }
             });
 
-            // ESPERA DE SEGURIDAD ANTES DE ACTIVAR
-            await new Promise(r => setTimeout(r, 1000));
+            log("Enviando ráfaga de despertar...");
             
-            log("Enviando comando de activación...");
-            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            // Datos de usuario para el Handshake
+            const sex = 0x01; // Masc
+            const height = 180;
+            const age = 50;
             
-            // Enviamos 3 veces con espacio de 1 segundo entre cada uno
-            for(let i=0; i<3; i++) {
-                await writeChar.writeValue(cmd);
-                await new Promise(r => setTimeout(r, 1000));
-                log("Intento de activación " + (i+1));
+            // Comando 1: Sincronización (Tipo 0x10)
+            const syncCmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 0x10, 0x00, 0x00, 0x00, 0x42]);
+            
+            // Comando 2: Datos de Usuario (Tipo 0x15) con Checksum XOR
+            const userCmd = new Uint8Array([0x13, 0x09, 0x15, sex, height, age, 0x00, 0x00, 0x42]);
+
+            // Ejecución secuencial para Bluefy
+            async function enviar(cmd) {
+                try {
+                    await writeChar.writeValueWithResponse(cmd);
+                } catch(e) {
+                    await writeChar.writeValueWithoutResponse(cmd);
+                }
             }
 
-            document.getElementById('status').innerText = "LISTO ✅ Súbete ahora";
+            await enviar(syncCmd);
+            await new Promise(r => setTimeout(r, 800));
+            await enviar(userCmd);
+            log("Comandos enviados. Súbete descalzo.");
+
+            document.getElementById('status').innerText = "ESPERANDO DATOS...";
 
         } catch (error) {
             log("ERROR: " + error);
