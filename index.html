@@ -2,8 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN BLUETOOTH TEST - IPAD</title>
+    <title>TITAN BLUETOOTH TEST</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
@@ -14,29 +13,26 @@
 </head>
 <body>
 
-    <h1 class="text-xl font-black mb-6 uppercase tracking-widest">PredictaCore <br> <span class="text-blue-500 text-sm">Escáner de Impedancia iPad</span></h1>
+    <h1 class="text-xl font-black mb-6">PREDICTACORE <br> <span class="text-blue-500">TEST DE BÁSCULA</span></h1>
 
-    <button onclick="conectarBascula()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold shadow-lg mb-8 active:scale-95 transition-transform">
+    <button onclick="conectarBascula()" class="bg-blue-600 text-white px-8 py-4 rounded-full font-bold mb-8">
         CONECTAR BÁSCULA
     </button>
 
-    <div id="status" class="text-gray-400 text-sm mb-4">Estado: Esperando conexión...</div>
+    <div id="status" class="text-gray-400 text-sm mb-4">Estado: Esperando...</div>
 
     <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
         <div class="data-card">
-            <p class="text-xs uppercase opacity-50 tracking-widest">Peso Actual</p>
+            <p class="text-xs opacity-50">PESO</p>
             <p id="peso" class="val">0.00 kg</p>
         </div>
         <div class="data-card">
-            <p class="text-xs uppercase opacity-50 tracking-widest">Impedancia</p>
+            <p class="text-xs opacity-50">IMPEDANCIA</p>
             <p id="impedancia" class="val">0 Ω</p>
         </div>
     </div>
 
-    <div class="max-w-sm mx-auto mt-6">
-        <p class="text-[10px] text-gray-500 uppercase mb-2">Logs del Sistema</p>
-        <div id="debug">Inicie conexión...</div>
-    </div>
+    <div id="debug" class="max-w-sm mx-auto mt-6">Logs del sistema...</div>
 
 <script>
     const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
@@ -51,64 +47,53 @@
 
     async function conectarBascula() {
         try {
-            if (!navigator.bluetooth) {
-                log("❌ Web Bluetooth no disponible");
-                return;
-            }
-
-            log("Buscando QN-Scale...");
+            log("Buscando báscula...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: [SERVICE_UUID]
             });
 
-            log("Conectando a dispositivo...");
             const server = await device.gatt.connect();
+            log("Conectado. Obteniendo servicios...");
             const service = await server.getPrimaryService(SERVICE_UUID);
             const characteristic = await service.getCharacteristic(NOTIFY_UUID);
             const writeChar = await service.getCharacteristic(WRITE_UUID);
 
-            document.getElementById('status').innerText = "Estado: CONECTADO ✅";
-            log("Suscrito. Configurando flujo...");
-
             await characteristic.startNotifications();
-            
+            log("Notificaciones activas.");
+
             characteristic.addEventListener('characteristicvaluechanged', (event) => {
                 let data = event.target.value;
                 let header = data.getUint8(0);
 
-                // Lectura de Peso
                 if (header === 0x10) {
                     let peso = ((data.getUint8(3) << 8) | data.getUint8(4)) / 100;
                     document.getElementById('peso').innerText = peso.toFixed(2) + " kg";
-                } 
-                // Escaneo de Impedancia en flujo de datos
-                else {
+                } else {
                     for (let i = 0; i < data.byteLength - 1; i++) {
                         let val = (data.getUint8(i) << 8) | data.getUint8(i+1);
                         if (val > 350 && val < 900) {
                             document.getElementById('impedancia').innerText = val + " Ω";
-                            log("⚡ IMPEDANCIA: " + val + " Ohms");
+                            log("⚡ DATOS RECIBIDOS: " + val + " Ohms");
                         }
                     }
                 }
             });
 
-            // RÁFAGA DE ACTIVACIÓN REFORZADA (Basada en protocolo Python exitoso)
-            log("Enviando ráfaga de activación...");
-            const sex_b = 0x01; // Masculino
-            const h_b = 180;    // Altura cm
-            const a_b = 50;     // Edad
-            const user_cmd = new Uint8Array([0x13, 0x09, 0x15, sex_b, h_b, a_b, 0x00, 0x00, 0x42]);
-
-            // Triple envío para asegurar despertar los electrodos en iOS
-            await writeChar.writeValue(user_cmd);
-            await new Promise(r => setTimeout(r, 600));
-            await writeChar.writeValue(user_cmd);
-            await new Promise(r => setTimeout(r, 600));
-            await writeChar.writeValue(user_cmd);
+            // ESPERA DE SEGURIDAD ANTES DE ACTIVAR
+            await new Promise(r => setTimeout(r, 1000));
             
-            log("LISTO. Súbete descalzo ahora.");
+            log("Enviando comando de activación...");
+            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
+            
+            // Enviamos 3 veces con espacio de 1 segundo entre cada uno
+            for(let i=0; i<3; i++) {
+                await writeChar.writeValue(cmd);
+                await new Promise(r => setTimeout(r, 1000));
+                log("Intento de activación " + (i+1));
+            }
+
+            document.getElementById('status').innerText = "LISTO ✅ Súbete ahora";
 
         } catch (error) {
             log("ERROR: " + error);
