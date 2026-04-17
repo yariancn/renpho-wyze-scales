@@ -2,28 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN - CAPTURA TOTAL</title>
+    <title>TITAN MODO ESCUCHA</title>
 </head>
-<body style="background:#0f172a; color:white; text-align:center; font-family:sans-serif; padding:20px;">
+<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px;">
 
-    <h2 style="font-size:14px; opacity:0.6; margin-bottom:20px;">PREDICTACORE: CAPTURA EN TIEMPO REAL</h2>
-    
-    <button onclick="conectar()" style="padding:20px; background:#2563eb; color:white; border-radius:50px; border:none; font-weight:bold; width:100%; max-width:300px; box-shadow: 0 4px 15px rgba(37,99,235,0.4);">
-        CONECTAR BÁSCULA
+    <button onclick="conectar()" style="padding:25px; background:green; color:white; font-weight:bold; border-radius:15px; border:none;">
+        MODO ESCUCHA PASIVA
     </button>
 
-    <div style="margin:30px auto; max-width:320px;">
-        <div style="background:#1e293b; padding:20px; border-radius:20px; margin-bottom:15px; border:1px solid #334155;">
-            <p style="font-size:11px; opacity:0.5; letter-spacing:1px;">PESO</p>
-            <span id="peso" style="font-size:45px; font-weight:900; color:#3b82f6;">0.00</span> <span style="font-size:18px;">kg</span>
-        </div>
-        <div style="background:#1e293b; padding:20px; border-radius:20px; border:1px solid #334155;">
-            <p style="font-size:11px; opacity:0.5; letter-spacing:1px;">IMPEDANCIA</p>
-            <span id="imp" style="font-size:45px; font-weight:900; color:#06b6d4;">0</span> <span style="font-size:18px;">Ω</span>
-        </div>
+    <div style="font-size:40px; margin:20px;">
+        <span id="peso">0.00</span> kg<br>
+        <span id="imp" style="color:cyan;">0</span> Ω
     </div>
 
-    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:15px; font-family:monospace; background:black; border-radius:10px; height:120px; overflow:auto; max-width:320px; margin:auto;">Logs...</div>
+    <div id="debug" style="font-size:10px; color:#10b981; text-align:left; padding:20px; font-family:monospace; height:200px; overflow:auto;"></div>
 
 <script>
     async function conectar() {
@@ -38,36 +30,30 @@
             });
 
             const server = await device.gatt.connect();
-            log("✅ GATT Conectado.");
+            log("✅ Canal abierto. Escuchando flujo crudo...");
 
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-            const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
 
-            // Comando de activación INMEDIATO
-            const cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x00, 0x00, 0x42]);
-            await cWrit.writeValueWithoutResponse(cmd);
-            log("Activación enviada.");
-
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let data = e.target.value;
-                let raw = new Uint8Array(data.buffer);
+                let data = new Uint8Array(e.target.value.buffer);
                 
-                // Procesar cada byte del paquete (Scan agresivo)
-                for (let i = 0; i < raw.length; i++) {
-                    // Si encontramos el Header de Peso (0x10)
-                    if (raw[i] === 0x10 && i + 4 < raw.length) {
-                        let p = ((raw[i+3] << 8) | raw[i+4]) / 100;
-                        if (p > 5) { // Filtro para ignorar ruidos menores a 5kg
-                            document.getElementById('peso').innerText = p.toFixed(2);
-                        }
+                // Registro crudo para ver qué está "escupiendo"
+                log("HEX: " + Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+                // Lógica de detección por patrón de bytes
+                for (let i = 0; i < data.length; i++) {
+                    // Si el byte es 0x10, es peso
+                    if (data[i] === 0x10 && i + 4 < data.length) {
+                        let p = ((data[i+3] << 8) | data[i+4]) / 100;
+                        if (p > 10) document.getElementById('peso').innerText = p.toFixed(2);
                     }
                     
-                    // Si encontramos Impedancia (Ohms)
-                    if (i + 1 < raw.length) {
-                        let v = (raw[i] << 8) | raw[i+1];
+                    // Si encontramos la pareja de bytes de la impedancia (400-800 Ohms)
+                    if (i + 1 < data.length) {
+                        let v = (data[i] << 8) | data[i+1];
                         if (v > 380 && v < 900) {
                             document.getElementById('imp').innerText = v;
                         }
@@ -75,7 +61,7 @@
                 }
             });
 
-            log("Listo. Písala descalzo.");
+            log("No haré nada más. Súbete y veamos qué escupe.");
 
         } catch (e) { log("ERR: " + e); }
     }
