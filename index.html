@@ -2,88 +2,234 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>PREDICTACORE TITAN - CLÍNICO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREDICTACORE - ESCÁNER CLÍNICO TOTAL</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 10px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 400px; margin: auto; }
-        .card { background: #1e293b; border-radius: 15px; padding: 15px; border: 1px solid #334155; }
-        .val { font-size: 2rem; font-weight: bold; color: #3b82f6; }
-        .input-group { background: #1e293b; padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align: left; }
-        input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 5px; border-radius: 5px; }
-        button { background: #2563eb; color: white; padding: 15px; width: 100%; max-width: 400px; border-radius: 50px; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 15px; margin: 0; }
+        .container { max-width: 450px; margin: auto; }
+        
+        /* Panel de Inputs */
+        .input-panel { background: #1e293b; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #334155; text-align: left; }
+        .input-row { display: flex; gap: 10px; margin-top: 10px; }
+        .input-group { flex: 1; }
+        .input-group label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group input, .input-group select { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 10px; border-radius: 8px; font-size: 14px; margin-top: 5px; box-sizing: border-box; }
+        
+        /* Botón de Conexión */
+        button { background: #2563eb; color: white; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
+        button:active { transform: scale(0.98); }
+
+        /* Dashboard de Resultados */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .card { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: center; }
+        .card.highlight { border-color: #10b981; grid-column: span 2; background: rgba(16, 185, 129, 0.05); }
+        .card.sensor { border-color: #3b82f6; }
+        
+        .label { font-size: 10px; color: #64748b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+        .val { font-size: 1.8rem; font-weight: 900; color: white; line-height: 1.2; }
+        .val-big { font-size: 2.5rem; color: #3b82f6; }
+        .unit { font-size: 0.9rem; color: #94a3b8; font-weight: normal; }
+
+        #debug { font-size: 10px; text-align: left; background: #000; padding: 10px; height: 80px; overflow: auto; color: #10b981; font-family: monospace; border-radius: 8px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <h2>PREDICTACORE <span style="color:#3b82f6">TITAN</span></h2>
-    
-    <div class="input-group" style="max-width:380px; margin:auto; margin-bottom:15px;">
-        <label style="font-size:10px; color:#64748b;">DATOS DEL PACIENTE (PARA CÁLCULO)</label>
-        <div style="display:flex; gap:10px; margin-top:5px;">
-            <input type="number" id="h" placeholder="Estatura cm" value="175">
-            <input type="number" id="age" placeholder="Edad" value="40">
+<div class="container">
+    <h1 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">PREDICTACORE <span style="color:#3b82f6">TITAN</span></h1>
+    <p style="color:#64748b; font-size: 10px; margin-bottom: 20px; text-transform: uppercase;">Módulo de Captura y Análisis v2.0</p>
+
+    <div class="input-panel">
+        <p style="margin:0; font-size: 12px; font-weight: bold; color: #cbd5e1; border-bottom: 1px solid #334155; padding-bottom: 8px;">PERFIL DEL PACIENTE</p>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Estatura (cm)</label>
+                <input type="number" id="inputEstatura" value="182">
+            </div>
+            <div class="input-group">
+                <label>Edad (Años)</label>
+                <input type="number" id="inputEdad" value="51">
+            </div>
+            <div class="input-group">
+                <label>Género</label>
+                <select id="inputGenero">
+                    <option value="masculino">Hombre</option>
+                    <option value="femenino">Mujer</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <button onclick="conectar()">INICIAR ESCANEO CLÍNICO</button>
+    <button onclick="conectar()">1. CONECTAR Y SUBIR A LA BÁSCULA</button>
 
-    <div class="grid" style="margin-top:20px;">
-        <div class="card"><p style="font-size:10px;">PESO</p><div id="peso" class="val">0.0</div></div>
-        <div class="card"><p style="font-size:10px;">IMPEDANCIA</p><div id="imp" class="val">0</div></div>
-        <div class="card" style="grid-column: span 2; border-color: #10b981;">
-            <p style="font-size:10px;">GRASA CORPORAL ESTIMADA</p>
-            <div id="percGrasa" class="val" style="color:#10b981;">0.0%</div>
+    <div class="grid" style="margin-bottom: 10px;">
+        <div class="card sensor">
+            <p class="label">Peso Real</p>
+            <div id="pesoLive" class="val val-big">0.0</div>
+            <span class="unit">KG</span>
+        </div>
+        <div class="card sensor" style="border-color: #06b6d4;">
+            <p class="label">Impedancia</p>
+            <div id="impLive" class="val val-big" style="color: #06b6d4;">0</div>
+            <span class="unit">OHMS</span>
         </div>
     </div>
+
+    <div class="grid">
+        <div class="card highlight">
+            <p class="label" style="color:#10b981;">Grasa Corporal Total</p>
+            <div id="resGrasaPerc" class="val" style="color:#10b981; font-size: 2.8rem;">0.0%</div>
+            <div id="resGrasaKg" style="font-size: 12px; color: #94a3b8; margin-top: 5px;">0.0 kg de masa grasa</div>
+        </div>
+        
+        <div class="card">
+            <p class="label">Masa Magra (FFM)</p>
+            <div id="resMagra" class="val">0.0<span class="unit">kg</span></div>
+        </div>
+        <div class="card">
+            <p class="label">Agua Corporal</p>
+            <div id="resAgua" class="val">0.0<span class="unit">L</span></div>
+        </div>
+        
+        <div class="card">
+            <p class="label">Masa Muscular</p>
+            <div id="resMusculo" class="val">0.0<span class="unit">kg</span></div>
+        </div>
+        <div class="card">
+            <p class="label">Masa Ósea</p>
+            <div id="resHueso" class="val">0.0<span class="unit">kg</span></div>
+        </div>
+
+        <div class="card">
+            <p class="label">Metabolismo Basal</p>
+            <div id="resTMB" class="val">0<span class="unit">kcal</span></div>
+        </div>
+        <div class="card">
+            <p class="label">Grasa Visceral</p>
+            <div id="resVisceral" class="val">0<span class="unit">Nvl</span></div>
+        </div>
+    </div>
+
+    <div id="debug">Sistema preparado. Ingresa los datos y presiona conectar.</div>
+</div>
 
 <script>
+    // --- MOTOR MATEMÁTICO PREDICTACORE CLÍNICO ---
+    function ejecutarAlgoritmo(peso, ohms, estatura, edad, sexo) {
+        const h_m = estatura / 100;
+        const imc = peso / (h_m * h_m);
+        const indiceZ = (estatura * estatura) / ohms; 
+
+        // Masa Magra Base (Calibración comercial de gama alta)
+        let ffm;
+        if (sexo === 'masculino') {
+            ffm = (0.39 * indiceZ) + (0.18 * peso) + (0.16 * estatura) - (0.09 * edad) + 5.0;
+        } else {
+            ffm = (0.38 * indiceZ) + (0.15 * peso) + (0.12 * estatura) - (0.07 * edad) + 4.5;
+        }
+
+        // Ajuste de densidad para IMC > 28
+        if (imc > 28) {
+            ffm += (imc - 28) * 0.15; 
+        }
+
+        // Cálculos de Grasa
+        let masaGrasa = peso - ffm;
+        let porcentajeGrasa = (masaGrasa / peso) * 100;
+
+        // Límites de seguridad
+        if (porcentajeGrasa < 4) porcentajeGrasa = 4;
+        if (porcentajeGrasa > 65) porcentajeGrasa = 65;
+
+        // Recalibración final
+        masaGrasa = peso * (porcentajeGrasa / 100);
+        ffm = peso - masaGrasa;
+
+        // Derivaciones Clínicas
+        let tbw = ffm * 0.732;          
+        let masaMuscular = ffm * 0.56;  
+        let masaOsea = ffm * 0.052;     
+        let tmb = 370 + (21.6 * ffm); 
+        
+        let visceral = (porcentajeGrasa * 0.25) + (edad * 0.12) - (sexo === 'masculino' ? 3 : 6);
+        visceral = Math.max(1, Math.round(visceral)); 
+
+        // --- ACTUALIZAR INTERFAZ GRÁFICA ---
+        document.getElementById('resGrasaPerc').innerText = porcentajeGrasa.toFixed(1) + "%";
+        document.getElementById('resGrasaKg').innerText = masaGrasa.toFixed(1) + " kg de masa grasa";
+        document.getElementById('resMagra').innerHTML = ffm.toFixed(1) + '<span class="unit">kg</span>';
+        document.getElementById('resAgua').innerHTML = tbw.toFixed(1) + '<span class="unit">L</span>';
+        document.getElementById('resMusculo').innerHTML = masaMuscular.toFixed(1) + '<span class="unit">kg</span>';
+        document.getElementById('resHueso').innerHTML = masaOsea.toFixed(1) + '<span class="unit">kg</span>';
+        document.getElementById('resTMB').innerHTML = Math.round(tmb) + '<span class="unit">kcal</span>';
+        document.getElementById('resVisceral').innerHTML = visceral + '<span class="unit">Nvl</span>';
+
+        return { peso, ohms, imc, porcentajeGrasa, masaGrasa, ffm, tbw, masaMuscular, masaOsea, tmb, visceral };
+    }
+
+
+    // --- COMUNICACIÓN BLUETOOTH (NÚCLEO TITAN) ---
     async function conectar() {
+        const d = document.getElementById('debug');
+        const log = m => { d.innerHTML += "<br>> " + m; d.scrollTop = d.scrollHeight; };
+        
+        // Leer datos del formulario antes de iniciar
+        const userEstatura = parseFloat(document.getElementById('inputEstatura').value);
+        const userEdad = parseFloat(document.getElementById('inputEdad').value);
+        const userGenero = document.getElementById('inputGenero').value;
+
+        if(!userEstatura || !userEdad) {
+            alert("Por favor, ingresa estatura y edad antes de pesar.");
+            return;
+        }
+
         try {
+            log("Buscando báscula QN-Scale...");
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'QN-Scale' }],
                 optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
             });
+
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
 
             await cNoti.startNotifications();
+            log("✅ CONECTADO. Súbete a la báscula descalzo.");
+
+            let calculoRealizado = false;
 
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
-                if (data[0] === 0x10) {
-                    let w = ((data[3] << 8) | data[4]) / 100;
-                    let z = (data[8] << 8) | data[9];
+                
+                // Extraer solo paquetes de datos reales (0x10)
+                if (data[0] === 0x10 && data.length >= 10) {
                     
-                    document.getElementById('peso').innerText = w.toFixed(1);
-                    if(z > 100) {
-                        document.getElementById('imp').innerText = z;
-                        calcularComposicion(w, z);
+                    let pesoLive = ((data[3] << 8) | data[4]) / 100;
+                    if (pesoLive > 5) {
+                        document.getElementById('pesoLive').innerText = pesoLive.toFixed(2);
+                    }
+
+                    let ohmsLive = (data[8] << 8) | data[9];
+                    
+                    // Cuando la báscula se estabiliza, manda los Ohms (> 100)
+                    if (ohmsLive > 100) {
+                        document.getElementById('impLive').innerText = ohmsLive;
+                        
+                        // Si no hemos calculado esta sesión, lanzamos el algoritmo
+                        if(!calculoRealizado) {
+                            log(`Calculando con: ${pesoLive}kg, ${ohmsLive}Ω`);
+                            let reporte = ejecutarAlgoritmo(pesoLive, ohmsLive, userEstatura, userEdad, userGenero);
+                            console.log("DATOS LISTOS PARA EXPORTAR:", reporte);
+                            calculoRealizado = true;
+                            log("✅ ESCANEO COMPLETADO.");
+                        }
                     }
                 }
             });
 
+            // Handshake maestro para despertar sensores (Checksum 19)
             setTimeout(() => {
                 let cmd = new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x01, 0x00, 0x19]);
-                cWrit.writeValueWithoutResponse(cmd);
-            }, 1000);
-
-        } catch (e) { alert(e); }
-    }
-
-    function calcularComposicion(w, z) {
-        let h = parseFloat(document.getElementById('h').value);
-        let age = parseFloat(document.getElementById('age').value);
-        
-        // Algoritmo de Bioimpedancia
-        let tbw = (0.396 * (Math.pow(h, 2) / z)) + (0.143 * w) + 8.4;
-        let ffm = tbw / 0.73;
-        let fatMass = w - ffm;
-        let fatPerc = (fatMass / w) * 100;
-
-        document.getElementById('percGrasa').innerText = fatPerc.toFixed(1) + "%";
-    }
-</script>
-</body>
-</html>
+                cWrit.writeValueWithoutResponse(cmd).catch(()=>{});
