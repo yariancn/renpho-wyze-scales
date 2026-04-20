@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - CONTROL DE PESO V3.7</title>
+    <title>OXYHYPERBARIC - CONTROL V3.8</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -15,12 +15,11 @@
         #modalDetalle, #modalNuevo { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 95vw; max-width: 1000px; height: 92vh; margin: 4vh auto; border-radius: 35px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 15px 30px; border-bottom: 1px solid #f1f5f9; }
-        
         .comp-table th { padding: 10px 8px; font-size: 10px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 12px 8px; font-weight: 900; font-size: 15px; border-bottom: 1px solid #f1f5f9; }
         .val-actual { color: #2563eb; }
         .val-ideal { color: #10b981; }
-        
+        .id-badge { background: #1e293b; color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-family: monospace; font-size: 14px; font-weight: 900; letter-spacing: 1px; }
         @media print {
             body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
@@ -28,7 +27,6 @@
             .modal-content { border: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; overflow: visible !important; }
             .predicta-card { break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 20px; box-shadow: none !important;}
             .no-print { display: none !important; }
-            canvas { max-width: 100% !important; max-height: 250px !important; }
         }
     </style>
 </head>
@@ -42,7 +40,7 @@
 
     <header class="flex flex-col items-center mb-6 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-20 mb-4 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.7 CLINICAL</h1>
+        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.8 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -52,8 +50,8 @@
         </div>
         <div class="predicta-card overflow-hidden">
             <table class="w-full text-left">
-                <thead class="bg-gray-50 text-[8px] font-black uppercase text-gray-400 border-b">
-                    <tr><th class="px-6 py-3">ID</th><th class="px-6 py-3">PACIENTE</th><th class="px-6 py-3 text-center">PERFIL</th><th class="px-6 py-3 text-center text-blue-600">PESO ACTUAL</th><th class="px-6 py-3 text-right">FICHA</th></tr>
+                <thead class="bg-gray-50 text-[8px] font-black uppercase text-gray-400 border-b italic">
+                    <tr><th class="px-6 py-3">ID EXPEDIENTE</th><th class="px-6 py-3">PACIENTE</th><th class="px-6 py-3 text-center">PERFIL</th><th class="px-6 py-3 text-center text-blue-600">PESO ACTUAL</th><th class="px-6 py-3 text-right">FICHA</th></tr>
                 </thead>
                 <tbody id="clientTableBody" class="divide-y divide-gray-50 font-medium text-sm italic"></tbody>
             </table>
@@ -95,12 +93,13 @@
             <div class="p-8">
                 <header class="flex justify-between items-start mb-6 border-b pb-6">
                     <div>
+                        <div id="modalID" class="id-badge mb-3 w-fit">ID: --</div>
                         <h2 id="modalNombre" class="text-4xl font-black italic uppercase text-gray-950 leading-none tracking-tight">PACIENTE</h2>
                         <p id="modalInfo" class="text-[10px] font-bold text-gray-400 uppercase mt-2 tracking-widest">--</p>
                     </div>
                     <div class="text-right">
                         <div class="bg-blue-600 text-white px-6 py-3 rounded-[20px] shadow-lg mb-1">
-                            <p class="text-[8px] uppercase font-bold italic opacity-80 tracking-widest">META: <span id="progDateText">--</span></p>
+                            <p class="text-[8px] uppercase font-bold italic opacity-80 tracking-widest">META BALDAN: <span id="progDateText">--</span></p>
                             <p id="prognosisSessions" class="text-xl font-black italic">--</p>
                         </div>
                     </div>
@@ -114,71 +113,26 @@
                                 <tr><th>Indicador</th><th>Valor Actual</th><th>Meta Saludable</th><th>Estado / Ajuste</th></tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Peso Total</td>
-                                    <td id="tPesoAct" class="val-actual">--</td>
-                                    <td id="tPesoId" class="val-ideal">--</td>
-                                    <td id="tPesoEst" class="text-[10px] uppercase font-bold">--</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">% Grasa Corporal</td>
-                                    <td id="tGrasaAct" class="val-actual">--</td>
-                                    <td id="tGrasaId" class="val-ideal">--</td>
-                                    <td id="tGrasaEst" class="text-[10px] uppercase font-bold text-orange-500">Objetivo Primario</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Masa Magra (Base Total)</td>
-                                    <td id="tMagraAct" class="val-actual">--</td>
-                                    <td id="tMagraId" class="val-ideal">--</td>
-                                    <td class="text-[10px] uppercase font-bold text-slate-400">Protección</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Masa Muscular Esquelética</td>
-                                    <td id="tMuscAct" class="val-actual text-indigo-600">--</td>
-                                    <td id="tMuscId" class="val-ideal">--</td>
-                                    <td id="tMuscEst" class="text-[10px] uppercase font-bold text-indigo-500">Construcción</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Agua Corporal</td>
-                                    <td id="tAguaAct" class="val-actual">--</td>
-                                    <td id="tAguaId" class="val-ideal">--</td>
-                                    <td id="tAguaEst" class="text-[10px] uppercase font-bold text-blue-400">Hidratación</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Índice Masa Corp. (IMC)</td>
-                                    <td id="tImcAct" class="val-actual">--</td>
-                                    <td id="tImcId" class="val-ideal">--</td>
-                                    <td id="tImcEst" class="text-[10px] uppercase font-bold">--</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Grasa Visceral</td>
-                                    <td id="tViscAct" class="val-actual">--</td>
-                                    <td id="tViscId" class="val-ideal">--</td>
-                                    <td id="tViscEst" class="text-[10px] uppercase font-bold">--</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Edad Metabólica</td>
-                                    <td id="tEdadMAct" class="val-actual">--</td>
-                                    <td id="tEdadMId" class="val-ideal">--</td>
-                                    <td id="tEdadMEst" class="text-[10px] uppercase font-bold">--</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-xs text-slate-500 font-bold uppercase">Gasto Basal (BMR)</td>
-                                    <td id="tBmrAct" class="val-actual text-slate-800">--</td>
-                                    <td id="tBmrId" class="val-ideal text-slate-500">--</td>
-                                    <td id="tBmrEst" class="text-[10px] uppercase font-bold text-slate-400">Metabolismo</td>
-                                </tr>
+                                <tr><td>Peso Total</td><td id="tPesoAct" class="val-actual">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>% Grasa Corporal</td><td id="tGrasaAct" class="val-actual">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[10px] uppercase font-bold text-orange-500">Objetivo</td></tr>
+                                <tr><td>Masa Magra (Base)</td><td id="tMagraAct" class="val-actual">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Protección</td></tr>
+                                <tr><td>Masa Muscular Esquelética</td><td id="tMuscAct" class="val-actual text-indigo-600">--</td><td id="tMuscId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-indigo-500">Construcción</td></tr>
+                                <tr><td>Agua Corporal</td><td id="tAguaAct" class="val-actual">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-blue-400">Hidratación</td></tr>
+                                <tr><td>IMC</td><td id="tImcAct" class="val-actual">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>Grasa Visceral</td><td id="tViscAct" class="val-actual">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>Edad Metabólica</td><td id="tEdadMAct" class="val-actual">--</td><td id="tEdadMId" class="val-ideal">--</td><td id="tEdadMEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>BMR (Metabolismo)</td><td id="tBmrAct" class="val-actual text-slate-800">--</td><td id="tBmrId" class="val-ideal text-slate-500">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Calorías</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="bg-slate-50 p-6 rounded-[30px] border border-slate-200 mb-8 no-print shadow-inner">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 italic tracking-widest">LECTURA BLUETOOTH EN VIVO</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 italic tracking-widest">CAPTURA DE PESO BLUETOOTH</h3>
                     <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-200 w-full md:w-auto hover:bg-blue-800 transition">📶 INICIAR ESCANEO</button>
+                        <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-200 w-full md:w-auto hover:bg-blue-800 transition">📶 INICIAR LECTURA</button>
                         <div class="flex-1 w-full flex gap-3">
-                            <input type="number" id="sessWeight" class="input-titan text-center text-xl text-blue-600" placeholder="Peso Actual">
+                            <input type="number" id="sessWeight" class="input-titan text-center text-xl text-blue-600" placeholder="Peso">
                             <input type="number" id="sessFat" class="input-titan text-center text-xl text-emerald-600" placeholder="% Grasa">
                         </div>
                         <button onclick="addSession()" class="titan-btn px-8 py-4 rounded-xl text-[10px] uppercase bg-slate-900 w-full md:w-auto">GUARDAR AVANCE</button>
@@ -186,16 +140,12 @@
                     <p id="btStatusSeg" class="text-[9px] font-mono text-emerald-600 mt-3 text-center uppercase tracking-widest h-4"></p>
                 </div>
 
-                <div class="predicta-card p-5">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest text-center">PROYECCIÓN DE AVANCE POR SESIÓN</h3>
-                    <div class="h-[300px] w-full"><canvas id="progressChart"></canvas></div>
-                </div>
+                <div class="predicta-card p-5"><canvas id="progressChart"></canvas></div>
             </div>
         </div>
     </div>
 
 <script>
-    // URL DE GOOGLE APPS SCRIPT VERIFICADA Y CORREGIDA
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
@@ -225,7 +175,7 @@
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
             tr.innerHTML = `
-                <td class="px-6 py-4 text-xs font-black text-blue-800 uppercase bg-blue-50/50 rounded-l-xl">${p.id}</td>
+                <td class="px-6 py-4"><span class="id-badge">${p.id}</span></td>
                 <td class="px-6 py-4 font-black text-gray-900 uppercase text-xs">${p.nombre}</td>
                 <td class="px-6 py-4 text-center text-[9px] text-gray-400 font-bold uppercase">${p.sexo} | ${p.edad} AÑOS | ${convA(p.altura)}</td>
                 <td class="px-6 py-4 text-center font-black text-blue-600 text-sm">${convP(p.peso).toFixed(1)} ${lblU}</td>
@@ -243,8 +193,8 @@
 
     function selectPatient(p) {
         currentPatient = p;
-        // Agregado el ID de forma visible en el título del modal
-        document.getElementById('modalNombre').innerText = `${p.nombre} (ID: ${p.id})`;
+        document.getElementById('modalID').innerText = `ID: ${p.id}`;
+        document.getElementById('modalNombre').innerText = p.nombre;
         document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
         
         let edad = parseFloat(p.edad), altura = parseFloat(p.altura);
@@ -284,9 +234,7 @@
         document.getElementById('tBmrAct').innerText = Math.round(p.bmr_kcal || estBMR) + ' kcal';
         document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
 
-        let perdidaSemanalKG = 2 * 0.453592; 
-        let semanasParaMeta = Math.max(0, difPesoKG) / perdidaSemanalKG; 
-        
+        let semanasParaMeta = Math.max(0, difPesoKG) / (2 * 0.453592); 
         if(semanasParaMeta <= 0) {
             document.getElementById('progDateText').innerText = "HOY";
             document.getElementById('prognosisSessions').innerText = "META ALCANZADA ✅";
@@ -312,9 +260,8 @@
             let sesionesActuales = registros.length;
             idealData[idealData.length-1] = convP(ultimoPesoKG); 
             let puntosProyeccion = 4;
-            let totalSesionesMeta = semanasRestantes * 2; 
             for(let i=1; i<=puntosProyeccion; i++) {
-                let proySesion = sesionesActuales + (totalSesionesMeta * (i / puntosProyeccion));
+                let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
                 labels.push('S' + Math.round(proySesion)); realData.push(null);
                 idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
@@ -341,8 +288,7 @@
     }
 
     async function addSession() {
-        let w = document.getElementById('sessWeight').value;
-        let f = document.getElementById('sessFat').value;
+        let w = document.getElementById('sessWeight').value; let f = document.getElementById('sessFat').value;
         if(!w) { alert("Inicia escaneo o ingresa peso."); return; }
         const avance = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusSeg').innerText = "Sincronizando...";
@@ -373,13 +319,12 @@
         }
         if(!edad || !alt) { alert("PredictaCore requiere edad y estatura."); return; }
         try {
-            status.innerText = "Buscando báscula...";
             const device = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
-            await cNoti.startNotifications(); status.innerText = "✅ CONECTADO. SUBIR A LA BÁSCULA.";
+            await cNoti.startNotifications();
             let lecturaFinalizada = false;
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
@@ -392,8 +337,7 @@
                         fIn.value = datosClinicosTemporales.grasa_porcentaje;
                         if (contexto !== 'nuevo') {
                             let pTemp = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, masa_muscular_kg: datosClinicosTemporales.musculo, agua_corporal_perc: datosClinicosTemporales.agua_perc, grasa_visceral: datosClinicosTemporales.visceral, edad_metabolica: datosClinicosTemporales.edad_metabolica, bmr_kcal: datosClinicosTemporales.bmr };
-                            selectPatient(pTemp);
-                            wIn.value = p.toFixed(1); fIn.value = datosClinicosTemporales.grasa_porcentaje;
+                            selectPatient(pTemp); wIn.value = p.toFixed(1); fIn.value = datosClinicosTemporales.grasa_porcentaje;
                         }
                         status.innerText = "✅ ANÁLISIS COMPLETADO. PRESIONA GUARDAR.";
                         setTimeout(() => device.gatt.disconnect(), 1500);
