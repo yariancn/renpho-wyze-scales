@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.4</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -34,7 +34,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.4 CLINICAL</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.5 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -163,9 +163,8 @@
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
-    let currentCalc = {}; // Almacena los cálculos del paciente actual para el info panel
+    let currentCalc = {}; 
 
-    // FUNCIÓN DE FOTOGRAFÍA (REEMPLAZA AL PDF PROBLEMÁTICO)
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
@@ -175,7 +174,6 @@
         let originalText = btn.innerText;
         btn.innerText = "⏳ PROCESSING...";
         
-        // Esconder elementos de UI que no deben salir en la foto
         header.style.display = 'none';
         panelBt.style.display = 'none';
 
@@ -184,14 +182,12 @@
             backgroundColor: "#ffffff",
             useCORS: true
         }).then(canvas => {
-            // Restaurar UI
             header.style.display = 'flex';
             panelBt.style.display = 'flex';
             btn.innerText = originalText;
             
             let imgData = canvas.toDataURL("image/png");
             
-            // Crear una pantalla negra superpuesta con la imagen lista para guardar
             let overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.inset = '0';
@@ -230,7 +226,6 @@
         });
     }
 
-    // EXPLICACIONES CLÍNICAS DINÁMICAS (Usando datos reales)
     function showInfo(metricId) {
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
@@ -288,20 +283,15 @@
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
 
-    // NUEVO MOTOR MATEMÁTICO (MASA MAGRA ANCLADA)
     function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
         let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
         let isMale = sexoSeguro.startsWith('m');
         
-        // Calculo de grasa ideal (ACSM)
         let baseGrasa = isMale ? 12 : 20;
         let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
         
-        // El anclaje maestro: La masa magra ideal es la que ya tiene
         let magraIdeal = masa_magra_actual; 
-        
-        // Peso ideal biológico real
         let pIdeal = magraIdeal / (1 - (gIdeal / 100)); 
         
         return { peso: pIdeal, grasa_perc: gIdeal, magra: magraIdeal, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
@@ -355,7 +345,9 @@
         let edad = parseFloat(p.edad || 0), altura = parseFloat(p.altura || 0);
         let pPesoActKG = parseFloat(p.peso || 0), pGrasaAct = parseFloat(p.grasa || 0);
         
-        let estFfmKG = p.masa_muscular_kg ? parseFloat(p.masa_muscular_kg) : pPesoActKG * (1 - (pGrasaAct/100));
+        // CORRECCIÓN MAESTRA: LA MASA MAGRA SOLO SE CALCULA DEL PESO Y LA GRASA TOTAL
+        let estFfmKG = pPesoActKG * (1 - (pGrasaAct / 100));
+        
         let musculoActKG = estFfmKG * 0.56; 
         let estAgua = (estFfmKG * 0.732 / pPesoActKG) * 100;
         let estBMR = 370 + (21.6 * estFfmKG);
@@ -363,10 +355,8 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        // SE ENVÍA LA MASA MAGRA ACTUAL PARA ANCLAR LA META
         let metas = calcularMetasIdeales(edad, sexoSeguro, estFfmKG);
 
-        // Guardamos los datos para las explicaciones dinámicas
         currentCalc = {
             pesoAct: pPesoActKG, pesoId: metas.peso, grasaAct: pGrasaAct, grasaId: metas.grasa_perc,
             magraAct: estFfmKG, magraId: metas.magra, muscAct: musculoActKG, muscId: metas.magra * 0.56,
