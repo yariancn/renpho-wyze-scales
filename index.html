@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.5</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -34,7 +34,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.5 CLINICAL</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.6 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -233,8 +233,8 @@
 
         if(metricId === 'weight') {
             title = "TOTAL WEIGHT";
-            desc = `Based on your current lean mass of ${convP(c.magraAct).toFixed(1)} ${u}, your exact ideal clinical weight is ${convP(c.pesoId).toFixed(1)} ${u}. You currently weigh ${convP(c.pesoAct).toFixed(1)} ${u}.`;
-            why = `We calculate this so you only lose pure fat (${Math.abs(convP(c.pesoAct - c.pesoId)).toFixed(1)} ${u}) without losing a single gram of muscle or bone.`;
+            desc = `Based on your Day 1 lean mass of ${convP(c.magraBase).toFixed(1)} ${u}, your exact clinical target weight is fixed at ${convP(c.pesoId).toFixed(1)} ${u}. You currently weigh ${convP(c.pesoAct).toFixed(1)} ${u}.`;
+            why = `We lock this goal so you only focus on losing pure fat without shifting targets, exactly as the Infra Baldan protocol dictates.`;
         } else if(metricId === 'fat') {
             title = "BODY FAT %";
             desc = `Your current fat is ${c.grasaAct.toFixed(1)}%. For your specific age and gender, the clinical healthy target is ${c.grasaId.toFixed(1)}%.`;
@@ -345,9 +345,13 @@
         let edad = parseFloat(p.edad || 0), altura = parseFloat(p.altura || 0);
         let pPesoActKG = parseFloat(p.peso || 0), pGrasaAct = parseFloat(p.grasa || 0);
         
-        // CORRECCIÓN MAESTRA: LA MASA MAGRA SOLO SE CALCULA DEL PESO Y LA GRASA TOTAL
+        // CORRECCIÓN CLÍNICA: EXTRAER DATOS DEL DÍA 1 PARA ANCLAR LA META FIJA
+        let pacienteOriginal = globalData.find(c => c.id === p.id) || p;
+        let pesoInicial = parseFloat(pacienteOriginal.peso || pPesoActKG);
+        let grasaInicial = parseFloat(pacienteOriginal.grasa || pGrasaAct);
+        let masaMagraInicialFija = pesoInicial * (1 - (grasaInicial / 100));
+
         let estFfmKG = pPesoActKG * (1 - (pGrasaAct / 100));
-        
         let musculoActKG = estFfmKG * 0.56; 
         let estAgua = (estFfmKG * 0.732 / pPesoActKG) * 100;
         let estBMR = 370 + (21.6 * estFfmKG);
@@ -355,11 +359,12 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        let metas = calcularMetasIdeales(edad, sexoSeguro, estFfmKG);
+        // LAS METAS AHORA SON INAMOVIBLES BASADAS EN EL DÍA 1
+        let metas = calcularMetasIdeales(edad, sexoSeguro, masaMagraInicialFija);
 
         currentCalc = {
             pesoAct: pPesoActKG, pesoId: metas.peso, grasaAct: pGrasaAct, grasaId: metas.grasa_perc,
-            magraAct: estFfmKG, magraId: metas.magra, muscAct: musculoActKG, muscId: metas.magra * 0.56,
+            magraAct: estFfmKG, magraId: metas.magra, magraBase: masaMagraInicialFija, muscAct: musculoActKG, muscId: metas.magra * 0.56,
             aguaAct: parseFloat(p.agua_corporal_perc || estAgua), aguaId: metas.agua_perc,
             imcAct: estIMC, imcId: metas.imc, viscAct: estVisc, viscId: 9,
             edadMAct: estEdadM, edadMId: edad, bmrAct: p.bmr_kcal || estBMR, bmrId: 370 + (21.6 * metas.magra)
