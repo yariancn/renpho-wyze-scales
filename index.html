@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.1</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -13,22 +13,15 @@
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
         #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
-        
-        /* Modal más compacto para encajar en iPad sin scroll */
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
-        
-        /* Tabla más compacta */
         .comp-table th { padding: 4px 6px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 6px 6px; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
         .val-actual { color: #2563eb; }
         .val-ideal { color: #10b981; }
         .id-badge { background: #1e293b; color: #60a5fa; padding: 2px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
-        
         .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; font-size: 11px; }
         .info-btn:hover { color: #3b82f6; }
-
-        /* Arreglo estricto para impresión/PDF en iPad Safari */
         @media print {
             html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
@@ -51,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.1 CLINICAL</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.2 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -97,7 +90,7 @@
             <div class="sticky-header flex justify-between items-center no-print pr-24">
                 <div class="flex gap-4 items-center">
                     <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
-                    <button onclick="imprimirReporte()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm">🖨️ PRINT PDF</button>
+                    <button onclick="imprimirReporte()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-blue-800">🖨️ PRINT PDF</button>
                 </div>
                 <button onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
             </div>
@@ -175,8 +168,8 @@
     </div>
 
 <script>
-    // URL DE GOOGLE APPS SCRIPT (INTACTA)
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
+    // URL FUNCIONAL Y CORRECTA VERIFICADA
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -201,14 +194,13 @@
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
 
-    // FIX PARA IMPRESIÓN EN IPAD (iOS Safari)
+    // BLINDAJE DE IMPRESIÓN (EVITA CRASH SI NO HAY NOMBRE)
     function imprimirReporte() {
         if(!currentPatient) return;
         const originalTitle = document.title;
-        // Cambia el título temporalmente para que el PDF guarde el nombre del paciente
-        document.title = "Report_" + currentPatient.nombre.replace(/\s+/g, '_');
+        let nombreSeguro = currentPatient.nombre ? currentPatient.nombre.replace(/\s+/g, '_') : 'Patient';
+        document.title = "Report_" + nombreSeguro;
         
-        // Forzar al iPad a mostrar todo el documento sin recortes
         document.body.style.overflow = 'visible';
         window.scrollTo(0,0);
         
@@ -226,7 +218,8 @@
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
 
     function calcularMetasIdeales(edad, sexo, altura_cm) {
-        let isMale = sexo.toLowerCase().startsWith('m');
+        let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
+        let isMale = sexoSeguro.startsWith('m');
         let baseGrasa = isMale ? 12 : 20;
         let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
@@ -242,11 +235,15 @@
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
-            let sexEn = p.sexo.toLowerCase().startsWith('m') ? 'M' : 'F';
+            
+            // BLINDAJE CONTRA CELDAS DE SEXO VACÍAS
+            let sexoSeguro = p.sexo ? String(p.sexo).toLowerCase() : 'm';
+            let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
+            
             tr.innerHTML = `
                 <td class="px-6 py-3"><span class="id-badge">${p.id}</span></td>
-                <td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre}</td>
-                <td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${sexEn} | ${p.edad} YRS | ${convA(p.altura)}</td>
+                <td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td>
+                <td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${sexEn} | ${p.edad || 0} YRS | ${convA(p.altura)}</td>
                 <td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(p.peso).toFixed(1)} ${lblU}</td>
                 <td class="px-6 py-3 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
@@ -262,14 +259,17 @@
 
     function selectPatient(p) {
         currentPatient = p;
-        let sexEn = p.sexo.toLowerCase().startsWith('m') ? 'M' : 'F';
-        document.getElementById('modalID').innerText = `ID: ${p.id}`;
-        document.getElementById('modalNombre').innerText = p.nombre;
-        document.getElementById('modalInfo').innerText = `${sexEn} | ${p.edad} YRS | START: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
         
-        let edad = parseFloat(p.edad), altura = parseFloat(p.altura);
-        let pPesoActKG = parseFloat(p.peso), pGrasaAct = parseFloat(p.grasa) || 0;
-        let isMale = (p.sexo.toLowerCase().startsWith('m'));
+        let sexoSeguro = p.sexo ? String(p.sexo).toLowerCase() : 'm';
+        let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
+        let isMale = sexoSeguro.startsWith('m');
+        
+        document.getElementById('modalID').innerText = `ID: ${p.id}`;
+        document.getElementById('modalNombre').innerText = p.nombre || 'Patient';
+        document.getElementById('modalInfo').innerText = `${sexEn} | ${p.edad || 0} YRS | START: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
+        
+        let edad = parseFloat(p.edad || 0), altura = parseFloat(p.altura || 0);
+        let pPesoActKG = parseFloat(p.peso || 0), pGrasaAct = parseFloat(p.grasa || 0);
         
         let estFfmKG = p.masa_muscular_kg ? parseFloat(p.masa_muscular_kg) : pPesoActKG * (1 - (pGrasaAct/100));
         let musculoActKG = estFfmKG * 0.56; 
@@ -279,7 +279,7 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        let metas = calcularMetasIdeales(edad, p.sexo, altura);
+        let metas = calcularMetasIdeales(edad, sexoSeguro, altura);
 
         document.getElementById('tPesoAct').innerText = convP(pPesoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
@@ -304,25 +304,25 @@
         document.getElementById('tAguaAct').innerText = parseFloat(p.agua_corporal_perc || estAgua).toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
         
-        document.getElementById('tImcAct').innerText = estIMC.toFixed(1);
+        document.getElementById('tImcAct').innerText = isNaN(estIMC) ? '--' : estIMC.toFixed(1);
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
         let tImcEst = document.getElementById('tImcEst');
         tImcEst.innerText = (estIMC - metas.imc) > 2 ? 'OVERWEIGHT' : 'HEALTHY';
         tImcEst.className = (estIMC - metas.imc) > 2 ? 'text-[9px] uppercase font-bold text-orange-500' : 'text-[9px] uppercase font-bold text-emerald-600';
 
-        document.getElementById('tViscAct').innerText = estVisc + ' Lvl';
+        document.getElementById('tViscAct').innerText = isNaN(estVisc) ? '--' : estVisc + ' Lvl';
         document.getElementById('tViscId').innerText = '≤ 9 Lvl';
         let tViscEst = document.getElementById('tViscEst');
         tViscEst.innerText = estVisc > 9 ? 'RISK' : 'OPTIMAL';
         tViscEst.className = estVisc > 9 ? 'text-[9px] uppercase font-bold text-orange-500' : 'text-[9px] uppercase font-bold text-emerald-600';
 
-        document.getElementById('tEdadMAct').innerText = estEdadM + ' yrs';
+        document.getElementById('tEdadMAct').innerText = isNaN(estEdadM) ? '--' : estEdadM + ' yrs';
         document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' yrs';
         let tEdadMEst = document.getElementById('tEdadMEst');
         tEdadMEst.innerText = estEdadM > edad ? 'AGED' : 'YOUTHFUL';
         tEdadMEst.className = estEdadM > edad ? 'text-[9px] uppercase font-bold text-orange-500' : 'text-[9px] uppercase font-bold text-emerald-600';
 
-        document.getElementById('tBmrAct').innerText = Math.round(p.bmr_kcal || estBMR) + ' kcal';
+        document.getElementById('tBmrAct').innerText = isNaN(estBMR) ? '--' : Math.round(p.bmr_kcal || estBMR) + ' kcal';
         document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
 
         let semanasParaMeta = Math.max(0, difPesoKG) / (2 * 0.453592); 
@@ -381,7 +381,8 @@
     async function saveNewClient() {
         const reqFields = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
         for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Please complete all fields and read scale."); return; } }
-        let gndr = document.getElementById('newGender').value === "Male" ? "Masculino" : "Femenino";
+        let rawGender = document.getElementById('newGender').value;
+        let gndr = rawGender === "Male" ? "Masculino" : "Femenino";
         
         const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: gndr, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusNew').innerText = "SAVING...";
@@ -411,7 +412,8 @@
 
     function calcularComposicionTotal(peso, ohms, estatura, edad, sexo) {
         const h_m = estatura / 100, imc = peso / (h_m * h_m), indiceZ = (estatura * estatura) / ohms;
-        let isMale = (sexo.toLowerCase().startsWith('m'));
+        let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
+        let isMale = sexoSeguro.startsWith('m');
         let ffm = (isMale ? (0.39 * indiceZ) + (0.18 * peso) + (0.16 * estatura) - (0.09 * edad) + 5.0 : (0.38 * indiceZ) + (0.15 * peso) + (0.12 * estatura) - (0.07 * edad) + 4.5);
         if (imc > 28) ffm += (imc - 28) * 0.15;
         let pg = ((peso - ffm) / peso) * 100;
@@ -425,7 +427,8 @@
         let edad, alt, sexo, status, wIn, fIn;
         if(contexto === 'nuevo') {
             edad = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; 
-            sexo = document.getElementById('newGender').value === "Male" ? "Masculino" : "Femenino";
+            let rawGender = document.getElementById('newGender').value;
+            sexo = rawGender === "Male" ? "Masculino" : "Femenino";
             status = document.getElementById('btStatusNew'); wIn = document.getElementById('newWeight'); fIn = document.getElementById('newFat');
         } else {
             edad = currentPatient.edad; alt = currentPatient.altura; sexo = currentPatient.sexo;
