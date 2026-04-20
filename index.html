@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - CONTROL DE PESO V3.4</title>
+    <title>OXYHYPERBARIC - CONTROL DE PESO V3.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -21,15 +21,13 @@
         .val-actual { color: #2563eb; }
         .val-ideal { color: #10b981; }
         
-        /* MOTOR DE IMPRESIÓN */
         @media print {
-            @page { size: letter; margin: 10mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body > *:not(#modalDetalle) { display: none !important; }
+            #modalDetalle { display: block !important; position: static !important; width: 100% !important; background: white !important; }
+            .modal-content { border: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; overflow: visible !important; }
+            .predicta-card { break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 20px; box-shadow: none !important;}
             .no-print { display: none !important; }
-            #modalDetalle { display: block !important; position: static !important; width: 100% !important; height: auto !important; background: white !important; }
-            .modal-content { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; height: auto !important; overflow: visible !important; }
-            .predicta-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; break-inside: avoid; margin-bottom: 20px; }
-            .sticky-header { display: none !important; }
             canvas { max-width: 100% !important; max-height: 250px !important; }
         }
     </style>
@@ -44,7 +42,7 @@
 
     <header class="flex flex-col items-center mb-6 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-20 mb-4 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.4 CLINICAL</h1>
+        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.6 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -109,7 +107,7 @@
                 </header>
 
                 <div class="predicta-card p-5 mb-8">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest">ANÁLISIS DE COMPOSICIÓN CORPORAL</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest">REPORTE CLÍNICO DE COMPOSICIÓN</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left comp-table">
                             <thead>
@@ -168,7 +166,7 @@
                                     <td class="text-xs text-slate-500 font-bold uppercase">Gasto Basal (BMR)</td>
                                     <td id="tBmrAct" class="val-actual text-slate-800">--</td>
                                     <td id="tBmrId" class="val-ideal text-slate-500">--</td>
-                                    <td class="text-[10px] uppercase font-bold text-slate-400">Metabolismo Activo</td>
+                                    <td id="tBmrEst" class="text-[10px] uppercase font-bold text-slate-400">Metabolismo</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -189,7 +187,7 @@
                 </div>
 
                 <div class="predicta-card p-5">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest text-center">PROYECCIÓN DE AVANCE CLÍNICO</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest text-center">PROYECCIÓN DE AVANCE POR SESIÓN</h3>
                     <div class="h-[300px] w-full"><canvas id="progressChart"></canvas></div>
                 </div>
             </div>
@@ -197,9 +195,7 @@
     </div>
 
 <script>
-    // ===== URL DE GOOGLE APPS SCRIPT VERIFICADA =====
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrmPULg5jGgI5VnZF66JYBhZS9CEN0CGAoZW8F2WWrRFJkmjKFrH7Kt5rnn0UXqfEU/exec"; 
-    // ================================================
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -211,26 +207,13 @@
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
 
-    // --- CÁLCULO CLÍNICO DE METAS IDEALES ---
     function calcularMetasIdeales(edad, sexo, altura_cm, masaMagraActual_kg) {
         let isMale = sexo.toLowerCase().startsWith('m');
         let baseGrasa = isMale ? 12 : 20;
-        let edadAjuste = Math.max(0, edad - 20) * 0.15;
-        let gIdeal = baseGrasa + edadAjuste;
+        let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-
-        let pIdeal;
-        if (masaMagraActual_kg && masaMagraActual_kg > 0) {
-            pIdeal = masaMagraActual_kg / (1 - (gIdeal / 100));
-        } else {
-            let pulgadasSobre5Ft = Math.max(0, (altura_cm / 2.54) - 60);
-            pIdeal = (isMale ? 50.0 : 45.5) + (2.3 * pulgadasSobre5Ft);
-        }
-
-        let aIdeal = isMale ? 60 : 55; 
-        let imcId = isMale ? 22.5 : 21.5;
-
-        return { peso: pIdeal, grasa_perc: gIdeal, magra: masaMagraActual_kg || (pIdeal * (1 - (gIdeal/100))), agua_perc: aIdeal, imc: imcId };
+        let pIdeal = (masaMagraActual_kg && masaMagraActual_kg > 0) ? masaMagraActual_kg / (1 - (gIdeal / 100)) : (isMale ? 50.0 : 45.5) + (2.3 * (Math.max(0, (altura_cm / 2.54) - 60)));
+        return { peso: pIdeal, grasa_perc: gIdeal, magra: masaMagraActual_kg || (pIdeal * (1 - (gIdeal/100))), agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
     function renderTable(data) {
@@ -250,9 +233,7 @@
     }
 
     function toggleUnits(e) { 
-        e.preventDefault(); 
-        unitMode = (unitMode === 'KG' ? 'LB' : 'KG'); 
-        lblU = unitMode === 'KG' ? 'kg' : 'lb';
+        e.preventDefault(); unitMode = (unitMode === 'KG' ? 'LB' : 'KG'); lblU = unitMode === 'KG' ? 'kg' : 'lb';
         document.getElementById('currentUnitText').innerText = (unitMode === 'KG' ? 'KG / CM' : 'LB / IN'); 
         renderTable(globalData); 
         if (currentPatient && document.getElementById('modalDetalle').style.display === 'block') selectPatient(currentPatient);
@@ -263,13 +244,10 @@
         document.getElementById('modalNombre').innerText = p.nombre;
         document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
         
-        document.getElementById('sessWeight').value = ""; document.getElementById('sessFat').value = ""; document.getElementById('btStatusSeg').innerText = "";
-
         let edad = parseFloat(p.edad), altura = parseFloat(p.altura);
         let pPesoActKG = parseFloat(p.peso), pGrasaAct = parseFloat(p.grasa) || 0;
         let isMale = (p.sexo.toLowerCase().startsWith('m'));
         
-        // CÁLCULOS ACTUALES
         let estFfmKG = p.masa_muscular_kg ? parseFloat(p.masa_muscular_kg) : pPesoActKG * (1 - (pGrasaAct/100));
         let musculoActKG = estFfmKG * 0.56; 
         let estAgua = (estFfmKG * 0.732 / pPesoActKG) * 100;
@@ -278,64 +256,42 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        // METAS IDEALES
         let metas = calcularMetasIdeales(edad, p.sexo, altura, estFfmKG);
 
-        // --- LLENAR TABLA UNIFICADA ---
         document.getElementById('tPesoAct').innerText = convP(pPesoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
         let difPesoKG = pPesoActKG - metas.peso;
-        let tPesoEst = document.getElementById('tPesoEst');
-        tPesoEst.innerText = (difPesoKG > 0 ? 'Excedente: ' : 'Faltante: ') + Math.abs(convP(difPesoKG)).toFixed(1) + ' ' + lblU;
-        tPesoEst.className = difPesoKG > 0 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-blue-500';
+        document.getElementById('tPesoEst').innerText = (difPesoKG > 0 ? 'Excedente: ' : 'Faltante: ') + Math.abs(convP(difPesoKG)).toFixed(1) + ' ' + lblU;
+        document.getElementById('tPesoEst').className = difPesoKG > 0 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-blue-500';
 
         document.getElementById('tGrasaAct').innerText = pGrasaAct.toFixed(1) + ' %';
         document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1) + ' %';
-
         document.getElementById('tMagraAct').innerText = convP(estFfmKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1) + ' ' + lblU;
-
         document.getElementById('tMuscAct').innerText = convP(musculoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
-
         document.getElementById('tAguaAct').innerText = parseFloat(p.agua_corporal_perc || estAgua).toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
-
         document.getElementById('tImcAct').innerText = estIMC.toFixed(1);
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
-        let tImcEst = document.getElementById('tImcEst');
-        tImcEst.innerText = (estIMC - metas.imc) > 2 ? 'Sobrepeso' : 'Saludable';
-        tImcEst.className = (estIMC - metas.imc) > 2 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
-
         document.getElementById('tViscAct').innerText = estVisc + ' Nvl';
         document.getElementById('tViscId').innerText = '≤ 9 Nvl';
-        let tViscEst = document.getElementById('tViscEst');
-        tViscEst.innerText = estVisc > 9 ? 'Riesgo' : 'Óptimo';
-        tViscEst.className = estVisc > 9 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
-
         document.getElementById('tEdadMAct').innerText = estEdadM + ' años';
         document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' años';
-        let tEdadMEst = document.getElementById('tEdadMEst');
-        tEdadMEst.innerText = estEdadM > edad ? 'Envejecido' : 'Joven';
-        tEdadMEst.className = estEdadM > edad ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
-
         document.getElementById('tBmrAct').innerText = Math.round(p.bmr_kcal || estBMR) + ' kcal';
         document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
 
-        // --- CÁLCULO PROGNOSIS BALDAN (2 sesiones/semana = 2 lbs / 0.907 kg) ---
-        let perdidaSemanalKG = 2 * 0.453592; // 0.907 kg
+        let perdidaSemanalKG = 2 * 0.453592; 
         let semanasParaMeta = Math.max(0, difPesoKG) / perdidaSemanalKG; 
         
         if(semanasParaMeta <= 0) {
             document.getElementById('progDateText').innerText = "HOY";
             document.getElementById('prognosisSessions').innerText = "META ALCANZADA ✅";
         } else {
-            let fechaMeta = new Date();
-            fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
+            let fechaMeta = new Date(); fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
             document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).toUpperCase();
             document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESIONES | ${Math.ceil(semanasParaMeta)} SEMANAS`;
         }
-
         document.getElementById('modalDetalle').style.display = 'block';
         initChart(p, difPesoKG, semanasParaMeta);
     }
@@ -343,36 +299,23 @@
     function initChart(p, difPesoKG, semanasRestantes) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-
         let registros = [{fecha: new Date(p.fechaInicio), pesoKG: parseFloat(p.peso)}];
         if(p.avances) p.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
         registros.sort((a,b) => a.fecha - b.fecha);
-
         let labels = [], realData = [], idealData = []; 
-
-        registros.forEach(reg => {
-            labels.push(reg.fecha.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}));
-            realData.push(convP(reg.pesoKG));
-            idealData.push(null); 
-        });
-
+        registros.forEach((reg, i) => { labels.push('S' + (i + 1)); realData.push(convP(reg.pesoKG)); idealData.push(null); });
         if (difPesoKG > 0) {
             let ultimoPesoKG = registros[registros.length-1].pesoKG;
-            let ultimaFecha = registros[registros.length-1].fecha;
+            let sesionesActuales = registros.length;
             idealData[idealData.length-1] = convP(ultimoPesoKG); 
-            
             let puntosProyeccion = 4;
+            let totalSesionesMeta = semanasRestantes * 2; 
             for(let i=1; i<=puntosProyeccion; i++) {
-                let diasProg = (semanasRestantes * 7) * (i / puntosProyeccion);
-                let fechaFutura = new Date(ultimaFecha);
-                fechaFutura.setDate(fechaFutura.getDate() + diasProg);
-                
-                labels.push(fechaFutura.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}));
-                realData.push(null);
+                let proySesion = sesionesActuales + (totalSesionesMeta * (i / puntosProyeccion));
+                labels.push('S' + Math.round(proySesion)); realData.push(null);
                 idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
-
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: { 
@@ -382,33 +325,23 @@
                     { label: 'Proyección Médica', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
                 ] 
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Peso (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } } } } }
         });
     }
 
     async function saveNewClient() {
         const reqFields = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
         for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Completa los datos y realiza el pesaje."); return; } }
-
-        const cliente = { 
-            id: document.getElementById('newID').value || `ID-${Date.now()}`,
-            nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value, 
-            edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, 
-            peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, 
-            fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales 
-        };
-        document.getElementById('btStatusNew').innerText = "Guardando...";
+        const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
     }
 
     async function addSession() {
-        if(!document.getElementById('sessWeight').value) { alert("Inicia escaneo o ingresa peso."); return; }
-        const avance = { 
-            id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], 
-            peso: document.getElementById('sessWeight').value, grasa: document.getElementById('sessFat').value || 0,
-            predicta_data: datosClinicosTemporales 
-        };
+        let w = document.getElementById('sessWeight').value;
+        let f = document.getElementById('sessFat').value;
+        if(!w) { alert("Inicia escaneo o ingresa peso."); return; }
+        const avance = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusSeg').innerText = "Sincronizando...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
         datosClinicosTemporales = {}; closeModal(); fetchData();
@@ -423,7 +356,7 @@
         let mus = ffm * 0.56, agua = (ffm * 0.732 / peso) * 100, bmr = 370 + (21.6 * ffm);
         let visc = (pg * 0.25) + (edad * 0.12) - (isMale ? 3 : 6);
         let idealF = isMale ? 15 : 22; let edadM = edad + (pg - idealF) * 0.5;
-        return { grasa_porcentaje: pg.toFixed(1), musculo_magra: ffm.toFixed(1), musculo: mus.toFixed(1), agua_perc: agua.toFixed(1), visceral: Math.max(1, Math.round(visc)), edad_metabolica: Math.max(18, Math.round(edadM)), bmr: Math.round(bmr), ohms: ohms };
+        return { grasa_porcentaje: pg.toFixed(1), musculo: ffm.toFixed(1), visceral: Math.max(1, Math.round(visc)), agua_perc: agua.toFixed(1), edad_metabolica: Math.max(18, Math.round(edadM)), bmr: Math.round(bmr), ohms: ohms };
     }
 
     async function conectarBáscula(contexto) {
@@ -436,7 +369,6 @@
             status = document.getElementById('btStatusSeg'); wIn = document.getElementById('sessWeight'); fIn = document.getElementById('sessFat');
         }
         if(!edad || !alt) { alert("PredictaCore requiere edad y estatura."); return; }
-        
         try {
             status.innerText = "Buscando báscula...";
             const device = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
@@ -444,25 +376,21 @@
             const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
             const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
             const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
-            await cNoti.startNotifications();
-            status.innerText = "✅ CONECTADO. SUBIR A LA BÁSCULA.";
-            
+            await cNoti.startNotifications(); status.innerText = "✅ CONECTADO. SUBIR A LA BÁSCULA.";
             let lecturaFinalizada = false;
             cNoti.addEventListener('characteristicvaluechanged', (e) => {
                 let data = new Uint8Array(e.target.value.buffer);
                 if (data[0] === 0x10 && data.length >= 10) {
                     let p = ((data[3] << 8) | data[4]) / 100, ohms = (data[8] << 8) | data[9];
-                    wIn.value = p.toFixed(1);
+                    if(!lecturaFinalizada) wIn.value = p.toFixed(1);
                     if (ohms > 100 && !lecturaFinalizada) {
                         lecturaFinalizada = true;
                         datosClinicosTemporales = calcularComposicionTotal(p, ohms, parseFloat(alt), parseFloat(edad), sexo);
                         fIn.value = datosClinicosTemporales.grasa_porcentaje;
-                        
                         if (contexto !== 'nuevo') {
-                            let pTemp = {...currentPatient}; pTemp.peso = p; pTemp.grasa = datosClinicosTemporales.grasa_porcentaje;
-                            pTemp.masa_muscular_kg = datosClinicosTemporales.musculo_magra; pTemp.agua_corporal_perc = datosClinicosTemporales.agua_perc;
-                            pTemp.grasa_visceral = datosClinicosTemporales.visceral; pTemp.edad_metabolica = datosClinicosTemporales.edad_metabolica;
-                            pTemp.bmr_kcal = datosClinicosTemporales.bmr; selectPatient(pTemp);
+                            let pTemp = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, masa_muscular_kg: datosClinicosTemporales.musculo, agua_corporal_perc: datosClinicosTemporales.agua_perc, grasa_visceral: datosClinicosTemporales.visceral, edad_metabolica: datosClinicosTemporales.edad_metabolica, bmr_kcal: datosClinicosTemporales.bmr };
+                            selectPatient(pTemp);
+                            wIn.value = p.toFixed(1); fIn.value = datosClinicosTemporales.grasa_porcentaje;
                         }
                         status.innerText = "✅ ANÁLISIS COMPLETADO. PRESIONA GUARDAR.";
                         setTimeout(() => device.gatt.disconnect(), 1500);
