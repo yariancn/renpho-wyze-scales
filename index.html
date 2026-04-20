@@ -21,7 +21,7 @@
         .val-actual { color: #2563eb; }
         .val-ideal { color: #10b981; }
         
-        /* MOTOR DE IMPRESIÓN CORREGIDO */
+        /* MOTOR DE IMPRESIÓN */
         @media print {
             @page { size: letter; margin: 10mm; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
@@ -197,9 +197,9 @@
     </div>
 
 <script>
-    // ===== INSERTA TU URL DE GOOGLE APPS SCRIPT AQUÍ =====
+    // ===== URL DE GOOGLE APPS SCRIPT VERIFICADA =====
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrmPULg5jGgI5VnZF66JYBhZS9CEN0CGAoZW8F2WWrRFJkmjKFrH7Kt5rnn0UXqfEU/exec"; 
-    // =====================================================
+    // ================================================
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
