@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - CONTROL DE PESO V3.6</title>
+    <title>OXYHYPERBARIC - CONTROL DE PESO V3.7</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -42,7 +42,7 @@
 
     <header class="flex flex-col items-center mb-6 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-20 mb-4 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.6 CLINICAL</h1>
+        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.7 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -195,7 +195,8 @@
     </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
+    // URL DE GOOGLE APPS SCRIPT VERIFICADA Y CORREGIDA
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -223,7 +224,8 @@
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
-            tr.innerHTML = `<td class="px-6 py-4 text-[8px] font-black text-gray-300 uppercase">${p.id}</td>
+            tr.innerHTML = `
+                <td class="px-6 py-4 text-xs font-black text-blue-800 uppercase bg-blue-50/50 rounded-l-xl">${p.id}</td>
                 <td class="px-6 py-4 font-black text-gray-900 uppercase text-xs">${p.nombre}</td>
                 <td class="px-6 py-4 text-center text-[9px] text-gray-400 font-bold uppercase">${p.sexo} | ${p.edad} AÑOS | ${convA(p.altura)}</td>
                 <td class="px-6 py-4 text-center font-black text-blue-600 text-sm">${convP(p.peso).toFixed(1)} ${lblU}</td>
@@ -241,7 +243,8 @@
 
     function selectPatient(p) {
         currentPatient = p;
-        document.getElementById('modalNombre').innerText = p.nombre;
+        // Agregado el ID de forma visible en el título del modal
+        document.getElementById('modalNombre').innerText = `${p.nombre} (ID: ${p.id})`;
         document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
         
         let edad = parseFloat(p.edad), altura = parseFloat(p.altura);
@@ -356,7 +359,7 @@
         let mus = ffm * 0.56, agua = (ffm * 0.732 / peso) * 100, bmr = 370 + (21.6 * ffm);
         let visc = (pg * 0.25) + (edad * 0.12) - (isMale ? 3 : 6);
         let idealF = isMale ? 15 : 22; let edadM = edad + (pg - idealF) * 0.5;
-        return { grasa_porcentaje: pg.toFixed(1), musculo: ffm.toFixed(1), visceral: Math.max(1, Math.round(visc)), agua_perc: agua.toFixed(1), edad_metabolica: Math.max(18, Math.round(edadM)), bmr: Math.round(bmr), ohms: ohms };
+        return { grasa_porcentaje: pg.toFixed(1), musculo_magra: ffm.toFixed(1), musculo: mus.toFixed(1), agua_perc: agua.toFixed(1), visceral: Math.max(1, Math.round(visc)), edad_metabolica: Math.max(18, Math.round(edadM)), bmr: Math.round(bmr), ohms: ohms };
     }
 
     async function conectarBáscula(contexto) {
@@ -382,7 +385,7 @@
                 let data = new Uint8Array(e.target.value.buffer);
                 if (data[0] === 0x10 && data.length >= 10) {
                     let p = ((data[3] << 8) | data[4]) / 100, ohms = (data[8] << 8) | data[9];
-                    if(!lecturaFinalizada) wIn.value = p.toFixed(1);
+                    if (!lecturaFinalizada) wIn.value = p.toFixed(1);
                     if (ohms > 100 && !lecturaFinalizada) {
                         lecturaFinalizada = true;
                         datosClinicosTemporales = calcularComposicionTotal(p, ohms, parseFloat(alt), parseFloat(edad), sexo);
