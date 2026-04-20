@@ -146,7 +146,9 @@
     </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
+    // ===== URL DE GOOGLE APPS SCRIPT VERIFICADA =====
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
+    // ================================================
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -283,6 +285,7 @@
         const reqFields = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
         for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Completa los datos y realiza el pesaje."); return; } }
         const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
+        document.getElementById('btStatusNew').innerText = "Guardando...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
     }
