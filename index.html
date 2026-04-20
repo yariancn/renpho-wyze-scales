@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.3</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.4</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; font-size: 12px; }
@@ -21,16 +22,6 @@
         .id-badge { background: #1e293b; color: #60a5fa; padding: 2px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
         .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; font-size: 11px; }
         .info-btn:hover { color: #3b82f6; }
-        @media print {
-            html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            body > *:not(#modalDetalle) { display: none !important; }
-            #modalDetalle { display: block !important; position: static !important; width: 100% !important; background: white !important; height: auto !important; }
-            .modal-content { border: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; overflow: visible !important; }
-            .predicta-card, .bg-slate-50 { break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 10px; box-shadow: none !important;}
-            .no-print { display: none !important; }
-            .comp-table td { font-size: 11px; padding: 4px; }
-            canvas { max-width: 100% !important; max-height: 180px !important; }
-        }
     </style>
 </head>
 <body class="antialiased p-4">
@@ -43,7 +34,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.3 CLINICAL</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.4 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -85,11 +76,11 @@
     </div>
 
     <div id="modalDetalle">
-        <div class="modal-content">
-            <div class="sticky-header flex justify-between items-center no-print pr-24">
+        <div class="modal-content" id="captureArea">
+            <div class="sticky-header flex justify-between items-center no-print pr-24" id="headerBotones">
                 <div class="flex gap-4 items-center">
                     <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
-                    <button onclick="imprimirReporte()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-blue-800">🖨️ PRINT PDF</button>
+                    <button id="btnSaveImage" onclick="descargarImagen()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-800 transition">📸 SAVE IMAGE</button>
                 </div>
                 <button onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
             </div>
@@ -117,22 +108,22 @@
                                 <tr><th>Indicator</th><th>Current Value</th><th>Healthy Goal</th><th>Status / Adjustment</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>Total Weight <span class="info-btn" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoAct" class="font-black">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Body Fat % <span class="info-btn" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaAct" class="font-black">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[9px] uppercase font-bold text-orange-500">Target</td></tr>
-                                <tr><td>Lean Mass (Base) <span class="info-btn" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraAct" class="font-black">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[9px] uppercase font-bold text-slate-400">Protection</td></tr>
-                                <tr><td>Skeletal Muscle Mass <span class="info-btn" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscAct" class="font-black">--</td><td id="tMuscId" class="val-ideal">--</td><td id="tMuscEst" class="text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Body Water <span class="info-btn" onclick="showInfo('water')">ⓘ</span></td><td id="tAguaAct" class="font-black">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[9px] uppercase font-bold text-blue-400">Hydration</td></tr>
-                                <tr><td>BMI <span class="info-btn" onclick="showInfo('bmi')">ⓘ</span></td><td id="tImcAct" class="font-black">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Visceral Fat <span class="info-btn" onclick="showInfo('visceral')">ⓘ</span></td><td id="tViscAct" class="font-black">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Metabolic Age <span class="info-btn" onclick="showInfo('age')">ⓘ</span></td><td id="tEdadMAct" class="font-black">--</td><td id="tEdadMId" class="val-ideal">--</td><td id="tEdadMEst" class="text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>BMR (Metabolism) <span class="info-btn" onclick="showInfo('bmr')">ⓘ</span></td><td id="tBmrAct" class="font-black">--</td><td id="tBmrId" class="val-ideal text-slate-500">--</td><td class="text-[9px] uppercase font-bold text-slate-400">Calories</td></tr>
+                                <tr><td>Total Weight <span class="info-btn no-print" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoAct" class="font-black">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Body Fat % <span class="info-btn no-print" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaAct" class="font-black">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[9px] uppercase font-bold text-orange-500">Target</td></tr>
+                                <tr><td>Lean Mass (Base) <span class="info-btn no-print" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraAct" class="font-black">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[9px] uppercase font-bold text-slate-400">Protection</td></tr>
+                                <tr><td>Skeletal Muscle Mass <span class="info-btn no-print" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscAct" class="font-black">--</td><td id="tMuscId" class="val-ideal">--</td><td id="tMuscEst" class="text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Body Water <span class="info-btn no-print" onclick="showInfo('water')">ⓘ</span></td><td id="tAguaAct" class="font-black">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[9px] uppercase font-bold text-blue-400">Hydration</td></tr>
+                                <tr><td>BMI <span class="info-btn no-print" onclick="showInfo('bmi')">ⓘ</span></td><td id="tImcAct" class="font-black">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Visceral Fat <span class="info-btn no-print" onclick="showInfo('visceral')">ⓘ</span></td><td id="tViscAct" class="font-black">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Metabolic Age <span class="info-btn no-print" onclick="showInfo('age')">ⓘ</span></td><td id="tEdadMAct" class="font-black">--</td><td id="tEdadMId" class="val-ideal">--</td><td id="tEdadMEst" class="text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>BMR (Metabolism) <span class="info-btn no-print" onclick="showInfo('bmr')">ⓘ</span></td><td id="tBmrAct" class="font-black">--</td><td id="tBmrId" class="val-ideal text-slate-500">--</td><td class="text-[9px] uppercase font-bold text-slate-400">Calories</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <div class="lg:col-span-1 bg-slate-50 p-4 rounded-[16px] border border-slate-200 no-print flex flex-col justify-center">
+                    <div class="lg:col-span-1 bg-slate-50 p-4 rounded-[16px] border border-slate-200 no-print flex flex-col justify-center" id="panelBluetooth">
                         <h3 class="text-[9px] font-black text-slate-400 uppercase mb-2 italic tracking-widest text-center">BLUETOOTH CAPTURE</h3>
                         <div class="flex flex-col gap-2">
                             <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-blue-200 hover:bg-blue-800 transition w-full">📶 START SCAN</button>
@@ -158,7 +149,7 @@
         <div class="bg-white max-w-sm m-auto mt-[30vh] p-5 rounded-2xl shadow-2xl border border-slate-100 relative">
             <button onclick="closeInfo()" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 font-bold text-lg">✕</button>
             <h3 id="infoTitle" class="text-base font-black text-blue-900 uppercase italic mb-1">Title</h3>
-            <p id="infoDesc" class="text-xs text-slate-700 mb-3 font-medium leading-relaxed">Description</p>
+            <p id="infoDesc" class="text-[13px] text-slate-700 mb-3 font-medium leading-relaxed">Description</p>
             <div class="bg-blue-50 p-2 rounded-lg border border-blue-100">
                 <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">WHY IT MATTERS</span>
                 <p id="infoWhy" class="text-[11px] text-blue-900 font-bold mt-1">Why</p>
@@ -167,43 +158,128 @@
     </div>
 
 <script>
-    // URL FUNCIONAL
+    // URL FUNCIONAL VIGENTE (INTACTA)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
+    let currentCalc = {}; // Almacena los cálculos del paciente actual para el info panel
 
-    const metricInfo = {
-        weight: { title: "TOTAL WEIGHT", desc: "Compares your current weight against a medically ideal target weight based on your height and frame.", why: "A general tracking metric. The primary goal is healthy mass reduction without losing muscle." },
-        fat: { title: "BODY FAT %", desc: "Compares current fat percentage against the optimal percentage for your specific age and gender.", why: "Excess body fat is heavily linked to cardiovascular risk. This is the primary target for reduction." },
-        lean: { title: "LEAN MASS (BASE)", desc: "Total weight minus fat (includes bones, water, and organs).", why: "Rapid weight loss often destroys lean mass. We monitor this to ensure you are losing fat, not vital tissue." },
-        muscle: { title: "SKELETAL MUSCLE", desc: "The exact mass of your active skeletal muscles compared to a healthy baseline.", why: "Muscle burns calories. Building and preserving muscle fiber actively speeds up your metabolism." },
-        water: { title: "BODY WATER", desc: "Measures total hydration levels. The optimal clinical range is generally 55% to 60%.", why: "Proper hydration is critical for cellular function and optimal fat oxidation during treatment." },
-        bmi: { title: "BODY MASS INDEX (BMI)", desc: "The ratio of your total weight to your height squared. Healthy target is near 22.5.", why: "A standardized medical screening tool used to categorize risk related to weight." },
-        visceral: { title: "VISCERAL FAT", desc: "The dangerous fat stored deep inside the belly, wrapped around internal organs. Target is level 9 or below.", why: "High visceral fat is a direct leading cause of metabolic syndrome, insulin resistance, and diabetes." },
-        age: { title: "METABOLIC AGE", desc: "Compares your BMR and body composition to the chronological average.", why: "If your metabolic age is higher than your actual age, your cellular structure is wearing down faster due to poor composition." },
-        bmr: { title: "BASAL METABOLIC RATE (BMR)", desc: "The total number of calories your body burns at complete rest.", why: "A higher BMR means your body naturally incinerates more fat throughout the day effortlessly." }
-    };
+    // FUNCIÓN DE FOTOGRAFÍA (REEMPLAZA AL PDF PROBLEMÁTICO)
+    function descargarImagen() {
+        if(!currentPatient) return;
+        let btn = document.getElementById('btnSaveImage');
+        let header = document.getElementById('headerBotones');
+        let panelBt = document.getElementById('panelBluetooth');
+        
+        let originalText = btn.innerText;
+        btn.innerText = "⏳ PROCESSING...";
+        
+        // Esconder elementos de UI que no deben salir en la foto
+        header.style.display = 'none';
+        panelBt.style.display = 'none';
 
+        html2canvas(document.getElementById('captureArea'), {
+            scale: 2, 
+            backgroundColor: "#ffffff",
+            useCORS: true
+        }).then(canvas => {
+            // Restaurar UI
+            header.style.display = 'flex';
+            panelBt.style.display = 'flex';
+            btn.innerText = originalText;
+            
+            let imgData = canvas.toDataURL("image/png");
+            
+            // Crear una pantalla negra superpuesta con la imagen lista para guardar
+            let overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+            overlay.style.zIndex = '9999';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            
+            let instruction = document.createElement('p');
+            instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE";
+            instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
+            
+            let img = document.createElement('img');
+            img.src = imgData;
+            img.style.maxHeight = '80vh';
+            img.style.maxWidth = '95vw';
+            img.style.borderRadius = '15px';
+            img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
+            
+            let closeBtn = document.createElement('button');
+            closeBtn.innerText = "✕ CLOSE PREVIEW";
+            closeBtn.className = "text-gray-400 font-bold mt-6 hover:text-white transition";
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            
+            overlay.appendChild(instruction);
+            overlay.appendChild(img);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+        }).catch(err => {
+            header.style.display = 'flex';
+            panelBt.style.display = 'flex';
+            btn.innerText = originalText;
+            alert("Error generating image.");
+        });
+    }
+
+    // EXPLICACIONES CLÍNICAS DINÁMICAS (Usando datos reales)
     function showInfo(metricId) {
-        document.getElementById('infoTitle').innerText = metricInfo[metricId].title;
-        document.getElementById('infoDesc').innerText = metricInfo[metricId].desc;
-        document.getElementById('infoWhy').innerText = metricInfo[metricId].why;
+        let title = "", desc = "", why = "";
+        let u = lblU.toUpperCase(); 
+        let c = currentCalc;
+
+        if(metricId === 'weight') {
+            title = "TOTAL WEIGHT";
+            desc = `Based on your current lean mass of ${convP(c.magraAct).toFixed(1)} ${u}, your exact ideal clinical weight is ${convP(c.pesoId).toFixed(1)} ${u}. You currently weigh ${convP(c.pesoAct).toFixed(1)} ${u}.`;
+            why = `We calculate this so you only lose pure fat (${Math.abs(convP(c.pesoAct - c.pesoId)).toFixed(1)} ${u}) without losing a single gram of muscle or bone.`;
+        } else if(metricId === 'fat') {
+            title = "BODY FAT %";
+            desc = `Your current fat is ${c.grasaAct.toFixed(1)}%. For your specific age and gender, the clinical healthy target is ${c.grasaId.toFixed(1)}%.`;
+            why = "Excess body fat is heavily linked to cardiovascular risk. This is the primary target for reduction.";
+        } else if(metricId === 'lean') {
+            title = "LEAN MASS (BASE)";
+            desc = `Your lean mass (bones, organs, muscle, water) is ${convP(c.magraAct).toFixed(1)} ${u}. Our absolute goal is to protect and maintain exactly ${convP(c.magraId).toFixed(1)} ${u}.`;
+            why = "Rapid weight loss often destroys lean mass. We monitor this to ensure you are losing fat, not vital tissue.";
+        } else if(metricId === 'muscle') {
+            title = "SKELETAL MUSCLE";
+            desc = `You have ${convP(c.muscAct).toFixed(1)} ${u} of active muscle. The baseline required to support your ideal frame is ${convP(c.muscId).toFixed(1)} ${u}.`;
+            why = "Muscle burns calories. Building and preserving muscle fiber actively speeds up your metabolism.";
+        } else if(metricId === 'water') {
+            title = "BODY WATER";
+            desc = `Your hydration level is ${c.aguaAct.toFixed(1)}%. The optimal clinical range is generally ${c.aguaId}%.`;
+            why = "Proper hydration is critical for cellular function and optimal fat oxidation during treatment.";
+        } else if(metricId === 'bmi') {
+            title = "BODY MASS INDEX (BMI)";
+            desc = `Your BMI is ${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}. The target is ${c.imcId.toFixed(1)}.`;
+            why = "A standardized medical screening tool used to categorize risk related to weight relative to height.";
+        } else if(metricId === 'visceral') {
+            title = "VISCERAL FAT";
+            desc = `Your visceral fat level is ${isNaN(c.viscAct) ? '--' : c.viscAct}. A healthy limit is level ${c.viscId} or below.`;
+            why = "High visceral fat is a direct leading cause of metabolic syndrome, insulin resistance, and diabetes.";
+        } else if(metricId === 'age') {
+            title = "METABOLIC AGE";
+            desc = `Your chronological age is ${c.edadMId}, but biologically your body performs like someone who is ${isNaN(c.edadMAct) ? '--' : c.edadMAct} years old.`;
+            why = "If your metabolic age is higher than your actual age, your cellular structure is wearing down faster due to poor composition.";
+        } else if(metricId === 'bmr') {
+            title = "BASAL METABOLIC RATE (BMR)";
+            desc = `You naturally burn ${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal at rest. Reaching your composition goal will adjust this to ${Math.round(c.bmrId)} kcal/day.`;
+            why = "A higher BMR means your body naturally incinerates more fat throughout the day effortlessly.";
+        }
+
+        document.getElementById('infoTitle').innerText = title;
+        document.getElementById('infoDesc').innerText = desc;
+        document.getElementById('infoWhy').innerText = why;
         document.getElementById('infoModalPanel').style.display = 'block';
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
-
-    // EJECUCIÓN DIRECTA PARA IPAD (Sin bloqueos de Safari)
-    function imprimirReporte() {
-        if(!currentPatient) return;
-        const originalTitle = document.title;
-        let nombreSeguro = currentPatient.nombre ? currentPatient.nombre.replace(/\s+/g, '_') : 'Patient';
-        document.title = "Report_" + nombreSeguro;
-        
-        window.print(); 
-        
-        document.title = originalTitle; 
-    }
 
     async function fetchData() {
         try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); }
@@ -212,14 +288,22 @@
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
 
-    function calcularMetasIdeales(edad, sexo, altura_cm) {
+    // NUEVO MOTOR MATEMÁTICO (MASA MAGRA ANCLADA)
+    function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
         let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
         let isMale = sexoSeguro.startsWith('m');
+        
+        // Calculo de grasa ideal (ACSM)
         let baseGrasa = isMale ? 12 : 20;
         let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-        let pIdeal = (isMale ? 50.0 : 45.5) + (2.3 * (Math.max(0, (altura_cm / 2.54) - 60)));
-        let magraIdeal = pIdeal * (1 - (gIdeal / 100));
+        
+        // El anclaje maestro: La masa magra ideal es la que ya tiene
+        let magraIdeal = masa_magra_actual; 
+        
+        // Peso ideal biológico real
+        let pIdeal = magraIdeal / (1 - (gIdeal / 100)); 
+        
         return { peso: pIdeal, grasa_perc: gIdeal, magra: magraIdeal, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
@@ -258,7 +342,6 @@
         let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
         let isMale = sexoSeguro.startsWith('m');
         
-        // CALCULAR ÚLTIMA ACTUALIZACIÓN
         let lastUpdateDate = p.fechaInicio ? p.fechaInicio.substring(0, 10) : '--';
         if (p.avances && p.avances.length > 0) {
             let sortedAvances = [...p.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -280,10 +363,18 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        let metas = calcularMetasIdeales(edad, sexoSeguro, altura);
+        // SE ENVÍA LA MASA MAGRA ACTUAL PARA ANCLAR LA META
+        let metas = calcularMetasIdeales(edad, sexoSeguro, estFfmKG);
 
-        // ASIGNACIÓN DE VALORES Y COLORES DE RIESGO
-        
+        // Guardamos los datos para las explicaciones dinámicas
+        currentCalc = {
+            pesoAct: pPesoActKG, pesoId: metas.peso, grasaAct: pGrasaAct, grasaId: metas.grasa_perc,
+            magraAct: estFfmKG, magraId: metas.magra, muscAct: musculoActKG, muscId: metas.magra * 0.56,
+            aguaAct: parseFloat(p.agua_corporal_perc || estAgua), aguaId: metas.agua_perc,
+            imcAct: estIMC, imcId: metas.imc, viscAct: estVisc, viscId: 9,
+            edadMAct: estEdadM, edadMId: edad, bmrAct: p.bmr_kcal || estBMR, bmrId: 370 + (21.6 * metas.magra)
+        };
+
         let difPesoKG = pPesoActKG - metas.peso;
         let elPesoAct = document.getElementById('tPesoAct');
         elPesoAct.innerText = convP(pPesoActKG).toFixed(1) + ' ' + lblU;
