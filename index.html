@@ -1,32 +1,39 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - CONTROL V3.9</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; font-size: 13px; }
-        .predicta-card { background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+        .predicta-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
-        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; width: 100%; outline: none; font-weight: 600; }
-        #modalDetalle, #modalNuevo { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
-        .modal-content { background: white; width: 95vw; max-width: 1000px; height: 92vh; margin: 4vh auto; border-radius: 35px; overflow-y: auto; position: relative; }
-        .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 15px 30px; border-bottom: 1px solid #f1f5f9; }
-        .comp-table th { padding: 10px 8px; font-size: 10px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
-        .comp-table td { padding: 12px 8px; font-weight: 900; font-size: 15px; border-bottom: 1px solid #f1f5f9; }
+        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; width: 100%; outline: none; font-weight: 600; font-size: 14px; }
+        #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        .modal-content { background: white; width: 98vw; max-width: 1050px; height: 96vh; margin: 2vh auto; border-radius: 25px; overflow-y: auto; position: relative; }
+        .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 12px 25px; border-bottom: 1px solid #f1f5f9; }
+        
+        .comp-table th { padding: 8px 6px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
+        .comp-table td { padding: 10px 6px; font-weight: 900; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
         .val-actual { color: #2563eb; }
         .val-ideal { color: #10b981; }
         .id-badge { background: #1e293b; color: #60a5fa; padding: 4px 12px; border-radius: 8px; font-family: monospace; font-size: 14px; font-weight: 900; letter-spacing: 1px; }
+        
+        .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; }
+        .info-btn:hover { color: #3b82f6; }
+
         @media print {
-            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
-            #modalDetalle { display: block !important; position: static !important; width: 100% !important; background: white !important; }
+            #modalDetalle { display: block !important; position: relative !important; width: 100% !important; background: white !important; }
             .modal-content { border: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; height: auto !important; overflow: visible !important; }
-            .predicta-card { break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 20px; box-shadow: none !important;}
+            .predicta-card, .bg-slate-50 { break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 15px; box-shadow: none !important;}
             .no-print { display: none !important; }
+            .comp-table td { font-size: 12px; padding: 6px; }
+            canvas { max-width: 100% !important; max-height: 200px !important; }
         }
     </style>
 </head>
@@ -34,24 +41,24 @@
 
     <div class="fixed top-5 right-6 z-[110] no-print">
         <button onclick="toggleUnits(event)" id="btnUnits" class="bg-blue-600 text-white py-2 px-5 rounded-xl font-black text-[10px] shadow-lg uppercase border-2 border-white hover:bg-slate-900 transition">
-            UNIDADES: <span id="currentUnitText">KG / CM</span>
+            UNITS: <span id="currentUnitText">KG / CM</span>
         </button>
     </div>
 
     <header class="flex flex-col items-center mb-6 no-print">
-        <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-20 mb-4 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.9 CLINICAL</h1>
+        <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-16 mb-3 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
+        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.0 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
-        <div class="flex justify-between items-center mb-5 px-2">
-            <button onclick="openNewClientModal()" class="titan-btn px-5 py-2.5 rounded-xl text-[9px] uppercase tracking-widest">+ NUEVO PACIENTE</button>
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Buscar nombre o ID..." class="bg-white border-none rounded-xl px-4 py-3 text-sm w-80 shadow-sm ring-1 ring-gray-100 font-bold">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <button onclick="openNewClientModal()" class="titan-btn px-5 py-2.5 rounded-xl text-[9px] uppercase tracking-widest">+ NEW PATIENT</button>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Search name or ID..." class="bg-white border-none rounded-xl px-4 py-3 text-sm w-80 shadow-sm ring-1 ring-gray-100 font-bold">
         </div>
         <div class="predicta-card overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-[8px] font-black uppercase text-gray-400 border-b italic">
-                    <tr><th class="px-6 py-3">ID EXPEDIENTE</th><th class="px-6 py-3">PACIENTE</th><th class="px-6 py-3 text-center">PERFIL</th><th class="px-6 py-3 text-center text-blue-600">PESO ACTUAL</th><th class="px-6 py-3 text-right">FICHA</th></tr>
+                    <tr><th class="px-6 py-3">FILE ID</th><th class="px-6 py-3">PATIENT</th><th class="px-6 py-3 text-center">PROFILE</th><th class="px-6 py-3 text-center text-blue-600">CURRENT WEIGHT</th><th class="px-6 py-3 text-right">RECORD</th></tr>
                 </thead>
                 <tbody id="clientTableBody" class="divide-y divide-gray-50 font-medium text-sm italic"></tbody>
             </table>
@@ -59,98 +66,140 @@
     </main>
 
     <div id="modalNuevo">
-        <div class="modal-content max-w-2xl h-auto p-10 mt-[5vh]">
+        <div class="modal-content max-w-2xl h-auto p-8 mt-[10vh]">
             <button onclick="closeNewClientModal()" class="absolute top-5 right-6 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
-            <h2 class="text-2xl font-black uppercase italic mb-6 border-l-4 border-blue-600 pl-3">Alta de Paciente</h2>
+            <h2 class="text-2xl font-black uppercase italic mb-6 border-l-4 border-blue-600 pl-3">New Patient Registration</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <input type="text" id="newID" class="input-titan" placeholder="ID Paciente (Opcional)">
-                <input type="text" id="newName" class="input-titan" placeholder="Nombre Completo">
-                <input type="number" id="newAge" class="input-titan border-blue-100" placeholder="Edad (Años)">
-                <input type="number" id="newHeight" class="input-titan border-blue-100" placeholder="Altura (cm)">
-                <select id="newGender" class="input-titan font-bold text-blue-900"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select>
+                <input type="text" id="newID" class="input-titan" placeholder="Patient ID (Optional)">
+                <input type="text" id="newName" class="input-titan" placeholder="Full Name">
+                <input type="number" id="newAge" class="input-titan border-blue-100" placeholder="Age (Years)">
+                <input type="number" id="newHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
+                <select id="newGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
             </div>
-            <div class="bg-blue-50 p-5 rounded-[20px] border border-blue-100">
+            <div class="bg-blue-50 p-4 rounded-[20px] border border-blue-100">
                 <div class="flex gap-4 items-center">
-                    <button onclick="conectarBáscula('nuevo')" class="bg-blue-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-800 transition">📶 LEER BÁSCULA</button>
-                    <input type="number" id="newWeight" class="input-titan text-center text-blue-600" placeholder="Peso">
-                    <input type="number" id="newFat" class="input-titan text-center text-emerald-600" placeholder="% Grasa">
+                    <button onclick="conectarBáscula('nuevo')" class="bg-blue-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-800 transition">📶 READ SCALE</button>
+                    <input type="number" id="newWeight" class="input-titan text-center text-blue-600" placeholder="Weight">
+                    <input type="number" id="newFat" class="input-titan text-center text-emerald-600" placeholder="Fat %">
                 </div>
                 <p id="btStatusNew" class="text-[9px] font-mono text-blue-600 mt-3 text-center uppercase h-4"></p>
             </div>
-            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-xl mt-4 uppercase text-[11px] tracking-widest bg-slate-900">GUARDAR EXPEDIENTE NUEVO</button>
+            <button onclick="saveNewClient()" class="w-full titan-btn py-4 rounded-xl mt-4 uppercase text-[11px] tracking-widest bg-slate-900">SAVE NEW RECORD</button>
         </div>
     </div>
 
     <div id="modalDetalle">
         <div class="modal-content">
             <div class="sticky-header flex justify-between items-center no-print">
-                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← REGRESAR A LISTA</button>
+                <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK TO LIST</button>
                 <div class="flex gap-3">
-                    <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase">🖨️ IMPRIMIR REPORTE</button>
+                    <button onclick="imprimirReporte()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-[9px] font-black uppercase">🖨️ SAVE / PRINT PDF</button>
                     <button onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
                 </div>
             </div>
-            <div class="p-8">
-                <header class="flex justify-between items-start mb-6 border-b pb-6">
+            <div class="p-6">
+                <header class="flex justify-between items-start mb-4 border-b pb-4">
                     <div>
-                        <div id="modalID" class="id-badge mb-3 w-fit">ID: --</div>
-                        <h2 id="modalNombre" class="text-4xl font-black italic uppercase text-gray-950 leading-none tracking-tight">PACIENTE</h2>
+                        <div id="modalID" class="id-badge mb-2 w-fit">ID: --</div>
+                        <h2 id="modalNombre" class="text-3xl font-black italic uppercase text-gray-950 leading-none tracking-tight">PATIENT</h2>
                         <p id="modalInfo" class="text-[10px] font-bold text-gray-400 uppercase mt-2 tracking-widest">--</p>
                     </div>
                     <div class="text-right">
-                        <div class="bg-blue-600 text-white px-6 py-3 rounded-[20px] shadow-lg mb-1">
-                            <p class="text-[8px] uppercase font-bold italic opacity-80 tracking-widest">META BALDAN: <span id="progDateText">--</span></p>
-                            <p id="prognosisSessions" class="text-xl font-black italic">--</p>
+                        <div class="bg-blue-600 text-white px-5 py-2 rounded-[15px] shadow-lg mb-1">
+                            <p class="text-[8px] uppercase font-bold italic opacity-80 tracking-widest">BALDAN GOAL: <span id="progDateText">--</span></p>
+                            <p id="prognosisSessions" class="text-lg font-black italic">--</p>
                         </div>
                     </div>
                 </header>
 
-                <div class="predicta-card p-5 mb-8">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest">REPORTE CLÍNICO DE COMPOSICIÓN</h3>
+                <div class="predicta-card p-4 mb-4">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-2 italic tracking-widest">CLINICAL COMPOSITION REPORT</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left comp-table">
                             <thead>
-                                <tr><th>Indicador</th><th>Valor Actual</th><th>Meta Saludable</th><th>Estado / Ajuste</th></tr>
+                                <tr><th>Indicator</th><th>Current Value</th><th>Healthy Goal</th><th>Status / Adjustment</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>Peso Total</td><td id="tPesoAct" class="val-actual">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[10px] uppercase font-bold">--</td></tr>
-                                <tr><td>% Grasa Corporal</td><td id="tGrasaAct" class="val-actual">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[10px] uppercase font-bold text-orange-500">Objetivo</td></tr>
-                                <tr><td>Masa Magra (Base)</td><td id="tMagraAct" class="val-actual">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Protección</td></tr>
-                                <tr><td>Masa Muscular Esquelética</td><td id="tMuscAct" class="val-actual text-indigo-600">--</td><td id="tMuscId" class="val-ideal">--</td><td id="tMuscEst" class="text-[10px] uppercase font-bold text-indigo-500">Construcción</td></tr>
-                                <tr><td>Agua Corporal</td><td id="tAguaAct" class="val-actual">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-blue-400">Hidratación</td></tr>
-                                <tr><td>IMC</td><td id="tImcAct" class="val-actual">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[10px] uppercase font-bold">--</td></tr>
-                                <tr><td>Grasa Visceral</td><td id="tViscAct" class="val-actual">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[10px] uppercase font-bold">--</td></tr>
-                                <tr><td>Edad Metabólica</td><td id="tEdadMAct" class="val-actual">--</td><td id="tEdadMId" class="val-ideal">--</td><td id="tEdadMEst" class="text-[10px] uppercase font-bold">--</td></tr>
-                                <tr><td>BMR (Metabolismo)</td><td id="tBmrAct" class="val-actual text-slate-800">--</td><td id="tBmrId" class="val-ideal text-slate-500">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Calorías</td></tr>
+                                <tr><td>Total Weight <span class="info-btn" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoAct" class="val-actual">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>Body Fat % <span class="info-btn" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaAct" class="val-actual">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[10px] uppercase font-bold text-orange-500">Target</td></tr>
+                                <tr><td>Lean Mass (Base) <span class="info-btn" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraAct" class="val-actual">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Protection</td></tr>
+                                <tr><td>Skeletal Muscle Mass <span class="info-btn" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscAct" class="val-actual text-indigo-600">--</td><td id="tMuscId" class="val-ideal">--</td><td id="tMuscEst" class="text-[10px] uppercase font-bold text-indigo-500">Build</td></tr>
+                                <tr><td>Body Water <span class="info-btn" onclick="showInfo('water')">ⓘ</span></td><td id="tAguaAct" class="val-actual">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-blue-400">Hydration</td></tr>
+                                <tr><td>BMI <span class="info-btn" onclick="showInfo('bmi')">ⓘ</span></td><td id="tImcAct" class="val-actual">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>Visceral Fat <span class="info-btn" onclick="showInfo('visceral')">ⓘ</span></td><td id="tViscAct" class="val-actual">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>Metabolic Age <span class="info-btn" onclick="showInfo('age')">ⓘ</span></td><td id="tEdadMAct" class="val-actual">--</td><td id="tEdadMId" class="val-ideal">--</td><td id="tEdadMEst" class="text-[10px] uppercase font-bold">--</td></tr>
+                                <tr><td>BMR (Metabolism) <span class="info-btn" onclick="showInfo('bmr')">ⓘ</span></td><td id="tBmrAct" class="val-actual text-slate-800">--</td><td id="tBmrId" class="val-ideal text-slate-500">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Calories</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="bg-slate-50 p-6 rounded-[30px] border border-slate-200 mb-8 no-print shadow-inner">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-3 italic tracking-widest">CAPTURA DE PESO BLUETOOTH</h3>
-                    <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-200 w-full md:w-auto hover:bg-blue-800 transition">📶 INICIAR LECTURA</button>
-                        <div class="flex-1 w-full flex gap-3">
-                            <input type="number" id="sessWeight" class="input-titan text-center text-xl text-blue-600" placeholder="Peso">
-                            <input type="number" id="sessFat" class="input-titan text-center text-xl text-emerald-600" placeholder="% Grasa">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-1 bg-slate-50 p-5 rounded-[20px] border border-slate-200 no-print flex flex-col justify-center">
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic tracking-widest text-center">BLUETOOTH CAPTURE</h3>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-4 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-200 hover:bg-blue-800 transition w-full">📶 START SCAN</button>
+                            <div class="flex gap-2">
+                                <input type="number" id="sessWeight" class="input-titan text-center text-lg text-blue-600" placeholder="Weight">
+                                <input type="number" id="sessFat" class="input-titan text-center text-lg text-emerald-600" placeholder="Fat %">
+                            </div>
+                            <button onclick="addSession()" class="titan-btn px-4 py-3 rounded-xl text-[10px] uppercase bg-slate-900 w-full mt-2">SAVE PROGRESS</button>
                         </div>
-                        <button onclick="addSession()" class="titan-btn px-8 py-4 rounded-xl text-[10px] uppercase bg-slate-900 w-full md:w-auto">GUARDAR AVANCE</button>
+                        <p id="btStatusSeg" class="text-[9px] font-mono text-emerald-600 mt-4 text-center uppercase tracking-widest h-4 font-bold"></p>
                     </div>
-                    <p id="btStatusSeg" class="text-[9px] font-mono text-emerald-600 mt-3 text-center uppercase tracking-widest h-4"></p>
+                    
+                    <div class="lg:col-span-2 predicta-card p-4 flex flex-col justify-center">
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase mb-2 italic tracking-widest text-center">PROGRESS PROJECTION BY SESSION</h3>
+                        <div class="h-[220px] w-full"><canvas id="progressChart"></canvas></div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="predicta-card p-5"><canvas id="progressChart"></canvas></div>
+    <div id="infoModalPanel" class="no-print">
+        <div class="bg-white max-w-sm m-auto mt-[30vh] p-6 rounded-2xl shadow-2xl border border-slate-100 relative">
+            <button onclick="closeInfo()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold">✕</button>
+            <h3 id="infoTitle" class="text-lg font-black text-blue-900 uppercase italic mb-2">Title</h3>
+            <p id="infoDesc" class="text-sm text-slate-700 mb-3 font-medium leading-relaxed">Description</p>
+            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">WHY IT MATTERS</span>
+                <p id="infoWhy" class="text-xs text-blue-900 font-bold mt-1">Why</p>
             </div>
         </div>
     </div>
 
 <script>
-    // URL CORRECTA Y CONFIRMADA POR TI (AKfycbwFe...)
+    // URL DE GOOGLE APPS SCRIPT
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
+
+    const metricInfo = {
+        weight: { title: "TOTAL WEIGHT", desc: "Compares your current weight against a medically ideal target weight based on your height and frame.", why: "A general tracking metric. The primary goal is healthy mass reduction without losing muscle." },
+        fat: { title: "BODY FAT %", desc: "Compares current fat percentage against the optimal percentage for your specific age and gender.", why: "Excess body fat is heavily linked to cardiovascular risk. This is the primary target for reduction." },
+        lean: { title: "LEAN MASS (BASE)", desc: "Total weight minus fat (includes bones, water, and organs).", why: "Rapid weight loss often destroys lean mass. We monitor this to ensure you are losing fat, not vital tissue." },
+        muscle: { title: "SKELETAL MUSCLE", desc: "The exact mass of your active skeletal muscles compared to a healthy baseline.", why: "Muscle burns calories. Building and preserving muscle fiber actively speeds up your metabolism." },
+        water: { title: "BODY WATER", desc: "Measures total hydration levels. The optimal clinical range is generally 55% to 60%.", why: "Proper hydration is critical for cellular function and optimal fat oxidation during treatment." },
+        bmi: { title: "BODY MASS INDEX (BMI)", desc: "The ratio of your total weight to your height squared. Healthy target is near 22.5.", why: "A standardized medical screening tool used to categorize risk related to weight." },
+        visceral: { title: "VISCERAL FAT", desc: "The dangerous fat stored deep inside the belly, wrapped around internal organs. Target is level 9 or below.", why: "High visceral fat is a direct leading cause of metabolic syndrome, insulin resistance, and diabetes." },
+        age: { title: "METABOLIC AGE", desc: "Compares your BMR and body composition to the chronological average.", why: "If your metabolic age is higher than your actual age, your cellular structure is wearing down faster due to poor composition." },
+        bmr: { title: "BASAL METABOLIC RATE (BMR)", desc: "The total number of calories your body burns at complete rest.", why: "A higher BMR means your body naturally incinerates more fat throughout the day effortlessly." }
+    };
+
+    function showInfo(metricId) {
+        document.getElementById('infoTitle').innerText = metricInfo[metricId].title;
+        document.getElementById('infoDesc').innerText = metricInfo[metricId].desc;
+        document.getElementById('infoWhy').innerText = metricInfo[metricId].why;
+        document.getElementById('infoModalPanel').style.display = 'block';
+    }
+    function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
+
+    function imprimirReporte() {
+        window.scrollTo(0,0);
+        setTimeout(() => { window.print(); }, 300);
+    }
 
     async function fetchData() {
         try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); }
@@ -176,10 +225,11 @@
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
+            let sexEn = p.sexo.toLowerCase().startsWith('m') ? 'M' : 'F';
             tr.innerHTML = `
                 <td class="px-6 py-4"><span class="id-badge">${p.id}</span></td>
                 <td class="px-6 py-4 font-black text-gray-900 uppercase text-xs">${p.nombre}</td>
-                <td class="px-6 py-4 text-center text-[9px] text-gray-400 font-bold uppercase">${p.sexo} | ${p.edad} AÑOS | ${convA(p.altura)}</td>
+                <td class="px-6 py-4 text-center text-[9px] text-gray-400 font-bold uppercase">${sexEn} | ${p.edad} YRS | ${convA(p.altura)}</td>
                 <td class="px-6 py-4 text-center font-black text-blue-600 text-sm">${convP(p.peso).toFixed(1)} ${lblU}</td>
                 <td class="px-6 py-4 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
@@ -195,9 +245,10 @@
 
     function selectPatient(p) {
         currentPatient = p;
+        let sexEn = p.sexo.toLowerCase().startsWith('m') ? 'M' : 'F';
         document.getElementById('modalID').innerText = `ID: ${p.id}`;
         document.getElementById('modalNombre').innerText = p.nombre;
-        document.getElementById('modalInfo').innerText = `${p.sexo} | ${p.edad} AÑOS | INICIO: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
+        document.getElementById('modalInfo').innerText = `${sexEn} | ${p.edad} YRS | START: ${p.fechaInicio ? p.fechaInicio.substring(0,10) : '--'}`;
         
         let edad = parseFloat(p.edad), altura = parseFloat(p.altura);
         let pPesoActKG = parseFloat(p.peso), pGrasaAct = parseFloat(p.grasa) || 0;
@@ -216,7 +267,7 @@
         document.getElementById('tPesoAct').innerText = convP(pPesoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
         let difPesoKG = pPesoActKG - metas.peso;
-        document.getElementById('tPesoEst').innerText = (difPesoKG > 0 ? 'Excedente: ' : 'Faltante: ') + Math.abs(convP(difPesoKG)).toFixed(1) + ' ' + lblU;
+        document.getElementById('tPesoEst').innerText = (difPesoKG > 0 ? 'SURPLUS: ' : 'DEFICIT: ') + Math.abs(convP(difPesoKG)).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoEst').className = difPesoKG > 0 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-blue-500';
 
         document.getElementById('tGrasaAct').innerText = pGrasaAct.toFixed(1) + ' %';
@@ -230,7 +281,7 @@
         
         let difMuscKG = musculoActKG - (metas.magra * 0.56);
         let tMuscEst = document.getElementById('tMuscEst');
-        tMuscEst.innerText = difMuscKG >= 0 ? 'Óptimo' : 'Requiere Fibra';
+        tMuscEst.innerText = difMuscKG >= 0 ? 'OPTIMAL' : 'NEEDS FIBER';
         tMuscEst.className = difMuscKG >= 0 ? 'text-[10px] uppercase font-bold text-indigo-500' : 'text-[10px] uppercase font-bold text-orange-500';
 
         document.getElementById('tAguaAct').innerText = parseFloat(p.agua_corporal_perc || estAgua).toFixed(1) + ' %';
@@ -239,19 +290,19 @@
         document.getElementById('tImcAct').innerText = estIMC.toFixed(1);
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
         let tImcEst = document.getElementById('tImcEst');
-        tImcEst.innerText = (estIMC - metas.imc) > 2 ? 'Sobrepeso' : 'Saludable';
+        tImcEst.innerText = (estIMC - metas.imc) > 2 ? 'OVERWEIGHT' : 'HEALTHY';
         tImcEst.className = (estIMC - metas.imc) > 2 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
 
-        document.getElementById('tViscAct').innerText = estVisc + ' Nvl';
-        document.getElementById('tViscId').innerText = '≤ 9 Nvl';
+        document.getElementById('tViscAct').innerText = estVisc + ' Lvl';
+        document.getElementById('tViscId').innerText = '≤ 9 Lvl';
         let tViscEst = document.getElementById('tViscEst');
-        tViscEst.innerText = estVisc > 9 ? 'Riesgo' : 'Óptimo';
+        tViscEst.innerText = estVisc > 9 ? 'RISK' : 'OPTIMAL';
         tViscEst.className = estVisc > 9 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
 
-        document.getElementById('tEdadMAct').innerText = estEdadM + ' años';
-        document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' años';
+        document.getElementById('tEdadMAct').innerText = estEdadM + ' yrs';
+        document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' yrs';
         let tEdadMEst = document.getElementById('tEdadMEst');
-        tEdadMEst.innerText = estEdadM > edad ? 'Envejecido' : 'Joven';
+        tEdadMEst.innerText = estEdadM > edad ? 'AGED' : 'YOUTHFUL';
         tEdadMEst.className = estEdadM > edad ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
 
         document.getElementById('tBmrAct').innerText = Math.round(p.bmr_kcal || estBMR) + ' kcal';
@@ -259,12 +310,12 @@
 
         let semanasParaMeta = Math.max(0, difPesoKG) / (2 * 0.453592); 
         if(semanasParaMeta <= 0) {
-            document.getElementById('progDateText').innerText = "HOY";
-            document.getElementById('prognosisSessions').innerText = "META ALCANZADA ✅";
+            document.getElementById('progDateText').innerText = "TODAY";
+            document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
         } else {
             let fechaMeta = new Date(); fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
-            document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).toUpperCase();
-            document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESIONES | ${Math.ceil(semanasParaMeta)} SEMANAS`;
+            document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
         initChart(p, difPesoKG, semanasParaMeta);
@@ -280,7 +331,7 @@
         registros.forEach((reg, i) => { 
             let sNum = i + 1;
             let semNum = (sNum / 2).toFixed(1).replace('.0', '');
-            labels.push('S' + sNum + ' (Sem ' + semNum + ')'); 
+            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
             realData.push(convP(reg.pesoKG)); 
             idealData.push(null); 
         });
@@ -292,7 +343,7 @@
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
                 let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
-                labels.push('S' + Math.round(proySesion) + ' (Sem ' + proySem + ')'); 
+                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
                 realData.push(null);
                 idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
@@ -302,39 +353,42 @@
             data: { 
                 labels: labels, 
                 datasets: [
-                    { label: 'Historial Real', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
-                    { label: 'Proyección Médica', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
+                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
+                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
                 ] 
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Peso (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } } } } }
         });
     }
 
     async function saveNewClient() {
         const reqFields = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
-        for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Completa los datos y realiza el pesaje."); return; } }
-        const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
-        document.getElementById('btStatusNew').innerText = "Guardando...";
+        for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Please complete all fields and read scale."); return; } }
+        let gndr = document.getElementById('newGender').value === "Male" ? "Masculino" : "Femenino";
+        
+        const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: gndr, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
+        document.getElementById('btStatusNew').innerText = "SAVING...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
     }
 
     async function addSession() {
         let w = document.getElementById('sessWeight').value; let f = document.getElementById('sessFat').value;
-        if(!w) { alert("Inicia escaneo o ingresa peso."); return; }
+        if(!w) { alert("Please start scan or enter weight manually."); return; }
         const avance = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
         let btnStatus = document.getElementById('btStatusSeg');
-        btnStatus.innerText = "SINCRONIZANDO...";
+        
+        btnStatus.innerText = "SYNCHRONIZING...";
         try {
             await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
-            btnStatus.innerText = "DATOS ACTUALIZADOS ✅";
+            btnStatus.innerText = "DATA UPDATED ✅";
             setTimeout(() => {
                 datosClinicosTemporales = {}; 
                 closeModal(); 
                 fetchData();
-            }, 1500);
+            }, 1200);
         } catch(e) {
-            btnStatus.innerText = "❌ ERROR AL GUARDAR";
+            btnStatus.innerText = "❌ SAVE ERROR";
         }
     }
 
@@ -353,13 +407,14 @@
     async function conectarBáscula(contexto) {
         let edad, alt, sexo, status, wIn, fIn;
         if(contexto === 'nuevo') {
-            edad = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; sexo = document.getElementById('newGender').value;
+            edad = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; 
+            sexo = document.getElementById('newGender').value === "Male" ? "Masculino" : "Femenino";
             status = document.getElementById('btStatusNew'); wIn = document.getElementById('newWeight'); fIn = document.getElementById('newFat');
         } else {
             edad = currentPatient.edad; alt = currentPatient.altura; sexo = currentPatient.sexo;
             status = document.getElementById('btStatusSeg'); wIn = document.getElementById('sessWeight'); fIn = document.getElementById('sessFat');
         }
-        if(!edad || !alt) { alert("PredictaCore requiere edad y estatura."); return; }
+        if(!edad || !alt) { alert("Age and height required."); return; }
         try {
             const device = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
             const server = await device.gatt.connect();
@@ -381,7 +436,7 @@
                             let pTemp = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, masa_muscular_kg: datosClinicosTemporales.musculo, agua_corporal_perc: datosClinicosTemporales.agua_perc, grasa_visceral: datosClinicosTemporales.visceral, edad_metabolica: datosClinicosTemporales.edad_metabolica, bmr_kcal: datosClinicosTemporales.bmr };
                             selectPatient(pTemp); wIn.value = p.toFixed(1); fIn.value = datosClinicosTemporales.grasa_porcentaje;
                         }
-                        status.innerText = "✅ ANÁLISIS COMPLETADO. PRESIONA GUARDAR.";
+                        status.innerText = "✅ SCAN COMPLETED. PRESS SAVE.";
                         setTimeout(() => device.gatt.disconnect(), 1500);
                     }
                 }
