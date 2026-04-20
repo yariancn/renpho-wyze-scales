@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - CONTROL V3.8</title>
+    <title>OXYHYPERBARIC - CONTROL V3.9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -40,7 +40,7 @@
 
     <header class="flex flex-col items-center mb-6 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-20 mb-4 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.8 CLINICAL</h1>
+        <h1 class="text-2xl font-black tracking-tighter uppercase italic text-gray-950">CONTROL DE PESO V3.9 CLINICAL</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -116,7 +116,7 @@
                                 <tr><td>Peso Total</td><td id="tPesoAct" class="val-actual">--</td><td id="tPesoId" class="val-ideal">--</td><td id="tPesoEst" class="text-[10px] uppercase font-bold">--</td></tr>
                                 <tr><td>% Grasa Corporal</td><td id="tGrasaAct" class="val-actual">--</td><td id="tGrasaId" class="val-ideal">--</td><td id="tGrasaEst" class="text-[10px] uppercase font-bold text-orange-500">Objetivo</td></tr>
                                 <tr><td>Masa Magra (Base)</td><td id="tMagraAct" class="val-actual">--</td><td id="tMagraId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-slate-400">Protección</td></tr>
-                                <tr><td>Masa Muscular Esquelética</td><td id="tMuscAct" class="val-actual text-indigo-600">--</td><td id="tMuscId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-indigo-500">Construcción</td></tr>
+                                <tr><td>Masa Muscular Esquelética</td><td id="tMuscAct" class="val-actual text-indigo-600">--</td><td id="tMuscId" class="val-ideal">--</td><td id="tMuscEst" class="text-[10px] uppercase font-bold text-indigo-500">Construcción</td></tr>
                                 <tr><td>Agua Corporal</td><td id="tAguaAct" class="val-actual">--</td><td id="tAguaId" class="val-ideal">--</td><td class="text-[10px] uppercase font-bold text-blue-400">Hidratación</td></tr>
                                 <tr><td>IMC</td><td id="tImcAct" class="val-actual">--</td><td id="tImcId" class="val-ideal">--</td><td id="tImcEst" class="text-[10px] uppercase font-bold">--</td></tr>
                                 <tr><td>Grasa Visceral</td><td id="tViscAct" class="val-actual">--</td><td id="tViscId" class="val-ideal">--</td><td id="tViscEst" class="text-[10px] uppercase font-bold">--</td></tr>
@@ -146,9 +146,8 @@
     </div>
 
 <script>
-    // ===== URL DE GOOGLE APPS SCRIPT VERIFICADA =====
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
-    // ================================================
+    // URL ORIGINAL CONFIRMADA FUNCIONAL
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMv-iHg-o5iXYbjD-aXCdZfCRRPZM1HysMsK8H-c6PRtE4XWl65KGHMDd_3pPYyGSO/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -160,13 +159,14 @@
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
 
-    function calcularMetasIdeales(edad, sexo, altura_cm, masaMagraActual_kg) {
+    function calcularMetasIdeales(edad, sexo, altura_cm) {
         let isMale = sexo.toLowerCase().startsWith('m');
         let baseGrasa = isMale ? 12 : 20;
         let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-        let pIdeal = (masaMagraActual_kg && masaMagraActual_kg > 0) ? masaMagraActual_kg / (1 - (gIdeal / 100)) : (isMale ? 50.0 : 45.5) + (2.3 * (Math.max(0, (altura_cm / 2.54) - 60)));
-        return { peso: pIdeal, grasa_perc: gIdeal, magra: masaMagraActual_kg || (pIdeal * (1 - (gIdeal/100))), agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
+        let pIdeal = (isMale ? 50.0 : 45.5) + (2.3 * (Math.max(0, (altura_cm / 2.54) - 60)));
+        let magraIdeal = pIdeal * (1 - (gIdeal / 100));
+        return { peso: pIdeal, grasa_perc: gIdeal, magra: magraIdeal, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
     function renderTable(data) {
@@ -211,7 +211,7 @@
         let estVisc = Math.max(1, Math.round(p.grasa_visceral || ((pGrasaAct * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
         let estEdadM = Math.max(18, Math.round(p.edad_metabolica || (edad + (pGrasaAct - (isMale?15:22)) * 0.5)));
 
-        let metas = calcularMetasIdeales(edad, p.sexo, altura, estFfmKG);
+        let metas = calcularMetasIdeales(edad, p.sexo, altura);
 
         document.getElementById('tPesoAct').innerText = convP(pPesoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
@@ -221,18 +221,39 @@
 
         document.getElementById('tGrasaAct').innerText = pGrasaAct.toFixed(1) + ' %';
         document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1) + ' %';
+        
         document.getElementById('tMagraAct').innerText = convP(estFfmKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1) + ' ' + lblU;
+        
         document.getElementById('tMuscAct').innerText = convP(musculoActKG).toFixed(1) + ' ' + lblU;
         document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
+        
+        let difMuscKG = musculoActKG - (metas.magra * 0.56);
+        let tMuscEst = document.getElementById('tMuscEst');
+        tMuscEst.innerText = difMuscKG >= 0 ? 'Óptimo' : 'Requiere Fibra';
+        tMuscEst.className = difMuscKG >= 0 ? 'text-[10px] uppercase font-bold text-indigo-500' : 'text-[10px] uppercase font-bold text-orange-500';
+
         document.getElementById('tAguaAct').innerText = parseFloat(p.agua_corporal_perc || estAgua).toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
+        
         document.getElementById('tImcAct').innerText = estIMC.toFixed(1);
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
+        let tImcEst = document.getElementById('tImcEst');
+        tImcEst.innerText = (estIMC - metas.imc) > 2 ? 'Sobrepeso' : 'Saludable';
+        tImcEst.className = (estIMC - metas.imc) > 2 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
+
         document.getElementById('tViscAct').innerText = estVisc + ' Nvl';
         document.getElementById('tViscId').innerText = '≤ 9 Nvl';
+        let tViscEst = document.getElementById('tViscEst');
+        tViscEst.innerText = estVisc > 9 ? 'Riesgo' : 'Óptimo';
+        tViscEst.className = estVisc > 9 ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
+
         document.getElementById('tEdadMAct').innerText = estEdadM + ' años';
         document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' años';
+        let tEdadMEst = document.getElementById('tEdadMEst');
+        tEdadMEst.innerText = estEdadM > edad ? 'Envejecido' : 'Joven';
+        tEdadMEst.className = estEdadM > edad ? 'text-[10px] uppercase font-bold text-orange-500' : 'text-[10px] uppercase font-bold text-emerald-600';
+
         document.getElementById('tBmrAct').innerText = Math.round(p.bmr_kcal || estBMR) + ' kcal';
         document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
 
@@ -256,7 +277,13 @@
         if(p.avances) p.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
         registros.sort((a,b) => a.fecha - b.fecha);
         let labels = [], realData = [], idealData = []; 
-        registros.forEach((reg, i) => { labels.push('S' + (i + 1)); realData.push(convP(reg.pesoKG)); idealData.push(null); });
+        registros.forEach((reg, i) => { 
+            let sNum = i + 1;
+            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
+            labels.push('S' + sNum + ' (Sem ' + semNum + ')'); 
+            realData.push(convP(reg.pesoKG)); 
+            idealData.push(null); 
+        });
         if (difPesoKG > 0) {
             let ultimoPesoKG = registros[registros.length-1].pesoKG;
             let sesionesActuales = registros.length;
@@ -264,7 +291,9 @@
             let puntosProyeccion = 4;
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                labels.push('S' + Math.round(proySesion)); realData.push(null);
+                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
+                labels.push('S' + Math.round(proySesion) + ' (Sem ' + proySem + ')'); 
+                realData.push(null);
                 idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
@@ -294,9 +323,19 @@
         let w = document.getElementById('sessWeight').value; let f = document.getElementById('sessFat').value;
         if(!w) { alert("Inicia escaneo o ingresa peso."); return; }
         const avance = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
-        document.getElementById('btStatusSeg').innerText = "Sincronizando...";
-        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
-        datosClinicosTemporales = {}; closeModal(); fetchData();
+        let btnStatus = document.getElementById('btStatusSeg');
+        btnStatus.innerText = "SINCRONIZANDO...";
+        try {
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
+            btnStatus.innerText = "DATOS ACTUALIZADOS ✅";
+            setTimeout(() => {
+                datosClinicosTemporales = {}; 
+                closeModal(); 
+                fetchData();
+            }, 1500);
+        } catch(e) {
+            btnStatus.innerText = "❌ ERROR AL GUARDAR";
+        }
     }
 
     function calcularComposicionTotal(peso, ohms, estatura, edad, sexo) {
