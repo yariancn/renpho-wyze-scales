@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.7</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.8</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -17,7 +17,6 @@
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
         
-        /* Ajuste de columnas de tabla para acomodar 6 campos */
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 6px 4px; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
         
@@ -48,7 +47,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.7 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.8 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -94,6 +93,7 @@
             <div class="sticky-header flex justify-between items-center no-print pr-24" id="headerBotones">
                 <div class="flex gap-4 items-center">
                     <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
+                    <button onclick="openHistory()" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-indigo-800 transition">⏱️ FULL HISTORY</button>
                     <button id="btnSaveImage" onclick="descargarImagen()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-800 transition">📸 SAVE IMAGE</button>
                 </div>
                 <button onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
@@ -190,6 +190,31 @@
         </div>
     </div>
 
+    <div id="historyModalPanel" class="no-print" style="z-index: 105; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+        <div class="bg-white max-w-3xl w-[90vw] mx-auto mt-[10vh] rounded-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-slate-900 p-4 flex justify-between items-center text-white">
+                <h3 class="text-lg font-black uppercase italic tracking-widest">CLINICAL HISTORY</h3>
+                <button onclick="closeHistory()" class="text-gray-400 hover:text-red-500 font-bold text-xl transition">✕</button>
+            </div>
+            <div class="overflow-y-auto p-0">
+                <table class="w-full text-left comp-table">
+                    <thead class="bg-slate-100 sticky top-0 border-b-2 border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4 text-slate-600">Session / Date</th>
+                            <th class="text-center py-3 text-blue-600">Weight</th>
+                            <th class="text-center py-3 text-slate-600">Δ Var</th>
+                            <th class="text-center py-3 text-slate-600">Fat %</th>
+                            <th class="text-center py-3 text-slate-600">Muscle</th>
+                            <th class="text-center py-3 text-slate-600">Bio-Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-gray-100 font-medium text-xs">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 <script>
     // URL FUNCIONAL VIGENTE (INTACTA)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
@@ -197,6 +222,82 @@
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
     let currentCalc = {}; 
+
+    // --- NUEVAS FUNCIONES DE HISTORIAL ---
+    function openHistory() {
+        if (!currentPatient) return;
+        let tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        
+        let historial = [];
+        let pOrig = globalData.find(c => c.id === currentPatient.id) || currentPatient;
+        
+        // Sesión Base (Día 1)
+        let iniPeso = parseFloat(pOrig.peso || 0);
+        let iniGrasa = parseFloat(pOrig.grasa || 0);
+        let iniFfm = iniPeso * (1 - (iniGrasa/100));
+        let iniMusc = iniFfm * 0.56;
+        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
+        let edad = parseFloat(pOrig.edad || 0);
+        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
+        
+        historial.push({ sesion: "S1 (Day 1)", fecha: pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--', peso: iniPeso, grasa: iniGrasa, musc: iniMusc, edadM: iniEdadM });
+
+        // Avances Guardados
+        if (pOrig.avances && pOrig.avances.length > 0) {
+            let sorted = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+            sorted.forEach((av, i) => {
+                let aPeso = parseFloat(av.peso || 0);
+                let aGrasa = parseFloat(av.grasa || 0);
+                let aFfm = aPeso * (1 - (aGrasa/100));
+                let aMusc = aFfm * 0.56;
+                let aEdadM = iniEdadM; 
+                if(av.predicta_data && av.predicta_data.edad_metabolica) {
+                    aEdadM = av.predicta_data.edad_metabolica;
+                } else {
+                    aEdadM = Math.max(18, Math.round(edad + (aGrasa - (isMale?15:22)) * 0.5));
+                }
+                historial.push({ sesion: `S${i + 2}`, fecha: av.fecha ? av.fecha.substring(0, 10) : '--', peso: aPeso, grasa: aGrasa, musc: aMusc, edadM: aEdadM });
+            });
+        }
+
+        // Generar Tabla
+        let html = '';
+        for (let i = 0; i < historial.length; i++) {
+            let curr = historial[i];
+            let prev = i > 0 ? historial[i-1] : null;
+            
+            let deltaStr = `<span class="text-gray-300">--</span>`;
+            if (prev) {
+                let diff = curr.peso - prev.peso;
+                if (Math.abs(diff) < 0.1) {
+                    deltaStr = `<span class="text-gray-400 font-bold">0.0</span>`;
+                } else {
+                    let color = diff < 0 ? 'text-emerald-500' : 'text-orange-500';
+                    let sign = diff > 0 ? '+' : '';
+                    deltaStr = `<span class="font-black ${color}">${sign}${convP(diff).toFixed(1)}</span>`;
+                }
+            }
+
+            html += `
+                <tr class="${i % 2 !== 0 ? 'bg-slate-50' : 'bg-white'} hover:bg-blue-50 transition">
+                    <td class="py-3 px-4"><span class="font-bold text-slate-800">${curr.sesion}</span><br><span class="text-[10px] font-medium text-slate-400">${curr.fecha}</span></td>
+                    <td class="text-center py-3 font-black text-blue-600">${convP(curr.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
+                    <td class="text-center py-3">${deltaStr}</td>
+                    <td class="text-center py-3 font-bold ${i>0 && curr.grasa < prev.grasa ? 'text-emerald-600' : 'text-slate-700'}">${curr.grasa.toFixed(1)}%</td>
+                    <td class="text-center py-3 font-bold ${i>0 && curr.musc >= prev.musc ? 'text-indigo-600' : 'text-slate-700'}">${convP(curr.musc).toFixed(1)}</td>
+                    <td class="text-center py-3 font-bold ${i>0 && curr.edadM < prev.edadM ? 'text-emerald-600' : 'text-slate-700'}">${curr.edadM} y</td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = html;
+        document.getElementById('historyModalPanel').style.display = 'block';
+    }
+
+    function closeHistory() {
+        document.getElementById('historyModalPanel').style.display = 'none';
+    }
+    // --- FIN FUNCIONES DE HISTORIAL ---
 
     function descargarImagen() {
         if(!currentPatient) return;
@@ -330,11 +431,10 @@
         return { peso: pIdeal, grasa_perc: gIdeal, magra: magraIdeal, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
-    // Funciones para pintar la columna Progress de manera dinámica
     function renderDiff(act, ini, isLowerBetter, suffix) {
         if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
         let diff = act - ini;
-        if(Math.abs(diff) < 0.1) return `<span class="text-gray-400">0.0 <span class="text-[8px]">${suffix}</span></span>`;
+        if(Math.abs(diff) < 0.1) return `<span class="text-gray-400 font-bold">0.0 <span class="text-[8px]">${suffix}</span></span>`;
         let sign = diff > 0 ? '+' : '';
         let color = isLowerBetter ? (diff < 0 ? 'text-emerald-500' : 'text-orange-500') : (diff > 0 ? 'text-emerald-500' : 'text-orange-500');
         return `<span class="font-black ${color}">${sign}${diff.toFixed(1)} <span class="text-[8px]">${suffix}</span></span>`;
@@ -343,7 +443,7 @@
     function renderDiffInt(act, ini, isLowerBetter, suffix) {
         if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
         let diff = Math.round(act - ini);
-        if(diff === 0) return `<span class="text-gray-400">0 <span class="text-[8px]">${suffix}</span></span>`;
+        if(diff === 0) return `<span class="text-gray-400 font-bold">0 <span class="text-[8px]">${suffix}</span></span>`;
         let sign = diff > 0 ? '+' : '';
         let color = isLowerBetter ? (diff < 0 ? 'text-emerald-500' : 'text-orange-500') : (diff > 0 ? 'text-emerald-500' : 'text-orange-500');
         return `<span class="font-black ${color}">${sign}${diff} <span class="text-[8px]">${suffix}</span></span>`;
@@ -385,7 +485,6 @@
         let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
         let isMale = sexoSeguro.startsWith('m');
         
-        // Calcular Última Actualización
         let lastUpdateDate = pOrig.fechaInicio ? pOrig.fechaInicio.substring(0, 10) : '--';
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sortedAvances = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -399,7 +498,6 @@
         let edad = parseFloat(pOrig.edad || 0);
         let altura = parseFloat(pOrig.altura || 0);
 
-        // VALORES INICIALES (DÍA 1)
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -410,7 +508,6 @@
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
-        // VALORES ACTUALES
         let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
         
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
@@ -426,7 +523,6 @@
             }
         }
         
-        // Si acaba de escanear (Bluetooth), sobrescribe con los datos en vivo
         if (p.isTempScan) {
             actPeso = parseFloat(p.peso);
             actGrasa = parseFloat(p.grasa);
@@ -444,10 +540,8 @@
         let actEdadM = Math.max(18, Math.round(actEdadMVal || (edad + (actGrasa - (isMale?15:22)) * 0.5)));
         let actBmr = parseFloat(actBmrVal || (370 + (21.6 * actFfm)));
 
-        // LAS METAS AHORA SON INAMOVIBLES BASADAS EN EL DÍA 1 (iniFfm)
         let metas = calcularMetasIdeales(edad, sexoSeguro, iniFfm);
 
-        // Guardar para las explicaciones clínicas
         currentCalc = {
             pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc,
             magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56,
@@ -456,7 +550,6 @@
             edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra)
         };
 
-        // DOM Updates - Día 1
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
@@ -467,7 +560,6 @@
         document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
         document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
 
-        // DOM Updates - Current & Progress & Goals
         let difPesoGoal = actPeso - metas.peso;
         document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
@@ -533,7 +625,6 @@
         document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
         document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
 
-        // Lógica de Rejuvenecimiento (Años Recuperados)
         let ageDiff = iniEdadM - actEdadM; 
         let badge = document.getElementById('rejuvenationBadge');
         if (!isNaN(ageDiff) && ageDiff > 0) {
@@ -563,7 +654,6 @@
         let registros = [{fecha: new Date(pOrig.fechaInicio), pesoKG: parseFloat(pOrig.peso)}];
         if(pOrig.avances) pOrig.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
         
-        // Si acaba de leer la báscula, lo inyecta a la gráfica al vuelo
         if(pTemp.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pTemp.peso)});
         
         registros.sort((a,b) => a.fecha - b.fecha);
