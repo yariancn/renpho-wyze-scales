@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.8</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -12,19 +12,16 @@
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; font-size: 12px; }
         .predicta-card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
-        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
+        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
         #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
-        
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 6px 4px; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
-        
         .val-ideal { color: #10b981; font-weight: 900; }
         .id-badge { background: #1e293b; color: #60a5fa; padding: 2px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
         .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; font-size: 11px; }
         .info-btn:hover { color: #3b82f6; }
-        
         @media print {
             html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
@@ -47,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.8 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.9 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -134,21 +131,13 @@
                             </thead>
                             <tbody>
                                 <tr><td>Total Weight <span class="info-btn no-print" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoIni" class="text-center font-medium text-slate-400">--</td><td id="tPesoAct" class="text-center font-black">--</td><td id="tPesoPrg" class="text-center">--</td><td id="tPesoId" class="text-center val-ideal">--</td><td id="tPesoEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Body Fat % <span class="info-btn no-print" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaIni" class="text-center font-medium text-slate-400">--</td><td id="tGrasaAct" class="text-center font-black">--</td><td id="tGrasaPrg" class="text-center">--</td><td id="tGrasaId" class="text-center val-ideal">--</td><td id="tGrasaEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Lean Mass (Base) <span class="info-btn no-print" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraIni" class="text-center font-medium text-slate-400">--</td><td id="tMagraAct" class="text-center font-black">--</td><td id="tMagraPrg" class="text-center">--</td><td id="tMagraId" class="text-center val-ideal">--</td><td id="tMagraEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Skeletal Muscle <span class="info-btn no-print" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscIni" class="text-center font-medium text-slate-400">--</td><td id="tMuscAct" class="text-center font-black">--</td><td id="tMuscPrg" class="text-center">--</td><td id="tMuscId" class="text-center val-ideal">--</td><td id="tMuscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Body Water <span class="info-btn no-print" onclick="showInfo('water')">ⓘ</span></td><td id="tAguaIni" class="text-center font-medium text-slate-400">--</td><td id="tAguaAct" class="text-center font-black">--</td><td id="tAguaPrg" class="text-center">--</td><td id="tAguaId" class="text-center val-ideal">--</td><td id="tAguaEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>BMI <span class="info-btn no-print" onclick="showInfo('bmi')">ⓘ</span></td><td id="tImcIni" class="text-center font-medium text-slate-400">--</td><td id="tImcAct" class="text-center font-black">--</td><td id="tImcPrg" class="text-center">--</td><td id="tImcId" class="text-center val-ideal">--</td><td id="tImcEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Visceral Fat <span class="info-btn no-print" onclick="showInfo('visceral')">ⓘ</span></td><td id="tViscIni" class="text-center font-medium text-slate-400">--</td><td id="tViscAct" class="text-center font-black">--</td><td id="tViscPrg" class="text-center">--</td><td id="tViscId" class="text-center val-ideal">--</td><td id="tViscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>Metabolic Age <span class="info-btn no-print" onclick="showInfo('age')">ⓘ</span></td><td id="tEdadMIni" class="text-center font-medium text-slate-400">--</td><td id="tEdadMAct" class="text-center font-black">--</td><td id="tEdadMPrg" class="text-center">--</td><td id="tEdadMId" class="text-center val-ideal">--</td><td id="tEdadMEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                
                                 <tr><td>BMR (Metabolism) <span class="info-btn no-print" onclick="showInfo('bmr')">ⓘ</span></td><td id="tBmrIni" class="text-center font-medium text-slate-400">--</td><td id="tBmrAct" class="text-center font-black">--</td><td id="tBmrPrg" class="text-center">--</td><td id="tBmrId" class="text-center val-ideal">--</td><td id="tBmrEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                             </tbody>
                         </table>
@@ -168,7 +157,6 @@
                         </div>
                         <p id="btStatusSeg" class="text-[8px] font-mono text-emerald-600 mt-2 text-center uppercase tracking-widest h-3 font-bold"></p>
                     </div>
-                    
                     <div class="lg:col-span-2 predicta-card p-3 flex flex-col justify-center">
                         <h3 class="text-[9px] font-black text-slate-400 uppercase mb-1 italic tracking-widest text-center">PROGRESS PROJECTION BY SESSION</h3>
                         <div class="h-[160px] w-full"><canvas id="progressChart"></canvas></div>
@@ -191,172 +179,156 @@
     </div>
 
     <div id="historyModalPanel" class="no-print" style="z-index: 105; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
-        <div class="bg-white max-w-3xl w-[90vw] mx-auto mt-[10vh] rounded-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="bg-slate-900 p-4 flex justify-between items-center text-white">
-                <h3 class="text-lg font-black uppercase italic tracking-widest">CLINICAL HISTORY</h3>
-                <button onclick="closeHistory()" class="text-gray-400 hover:text-red-500 font-bold text-xl transition">✕</button>
+        <div class="bg-white max-w-4xl w-[95vw] mx-auto mt-[5vh] rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
+                <div>
+                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest leading-none">Clinical History Log</p>
+                    <h3 id="histPatientName" class="text-xl font-black uppercase italic tracking-tighter mt-1">PATIENT NAME</h3>
+                </div>
+                <button onclick="closeHistory()" class="bg-slate-800 text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition">✕</button>
             </div>
-            <div class="overflow-y-auto p-0">
+            <div class="overflow-y-auto p-4">
                 <table class="w-full text-left comp-table">
-                    <thead class="bg-slate-100 sticky top-0 border-b-2 border-slate-200">
+                    <thead class="bg-slate-50 sticky top-0 border-b-2 border-slate-200">
                         <tr>
-                            <th class="py-3 px-4 text-slate-600">Session / Date</th>
+                            <th class="py-3 px-4">Session</th>
                             <th class="text-center py-3 text-blue-600">Weight</th>
-                            <th class="text-center py-3 text-slate-600">Δ Var</th>
-                            <th class="text-center py-3 text-slate-600">Fat %</th>
-                            <th class="text-center py-3 text-slate-600">Muscle</th>
+                            <th class="text-center py-3 text-emerald-600">Body Fat %</th>
+                            <th class="text-center py-3 text-indigo-600">Muscle</th>
                             <th class="text-center py-3 text-slate-600">Bio-Age</th>
                         </tr>
                     </thead>
-                    <tbody id="historyTableBody" class="divide-y divide-gray-100 font-medium text-xs">
-                        </tbody>
+                    <tbody id="historyTableBody" class="divide-y divide-gray-100 font-medium text-xs"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
 <script>
-    // URL FUNCIONAL VIGENTE (INTACTA)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
     let currentCalc = {}; 
 
-    // --- NUEVAS FUNCIONES DE HISTORIAL ---
     function openHistory() {
         if (!currentPatient) return;
+        document.getElementById('histPatientName').innerText = currentPatient.nombre || 'Patient';
         let tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
         
-        let historial = [];
         let pOrig = globalData.find(c => c.id === currentPatient.id) || currentPatient;
-        
-        // Sesión Base (Día 1)
+        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
+        let edad = parseFloat(pOrig.edad || 0);
+
+        // --- CALCULAR TARGET FIJO (BASADO EN DÍA 1) ---
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
-        let iniMusc = iniFfm * 0.56;
-        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
-        let edad = parseFloat(pOrig.edad || 0);
-        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
+        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
         
-        historial.push({ sesion: "S1 (Day 1)", fecha: pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--', peso: iniPeso, grasa: iniGrasa, musc: iniMusc, edadM: iniEdadM });
+        // Fila 1: TARGET (META CLÍNICA)
+        let html = `
+            <tr class="bg-emerald-50 border-b-2 border-emerald-100">
+                <td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td>
+                <td class="text-center py-4 font-black text-emerald-600">${convP(metas.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
+                <td class="text-center py-4 font-black text-emerald-600">${metas.grasa_perc.toFixed(1)}%</td>
+                <td class="text-center py-4 font-black text-emerald-600">${convP(metas.magra * 0.56).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
+                <td class="text-center py-4 font-black text-emerald-600">≤ ${edad} y</td>
+            </tr>
+        `;
 
-        // Avances Guardados
+        let log = [];
+        // Sesión 1: Base
+        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
+        log.push({ s: "S1 (Day 1)", f: pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--', p: iniPeso, g: iniGrasa, m: iniFfm * 0.56, e: iniEdadM });
+
+        // Sesiones siguientes: Avances
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sorted = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             sorted.forEach((av, i) => {
-                let aPeso = parseFloat(av.peso || 0);
-                let aGrasa = parseFloat(av.grasa || 0);
-                let aFfm = aPeso * (1 - (aGrasa/100));
-                let aMusc = aFfm * 0.56;
-                let aEdadM = iniEdadM; 
-                if(av.predicta_data && av.predicta_data.edad_metabolica) {
-                    aEdadM = av.predicta_data.edad_metabolica;
-                } else {
-                    aEdadM = Math.max(18, Math.round(edad + (aGrasa - (isMale?15:22)) * 0.5));
-                }
-                historial.push({ sesion: `S${i + 2}`, fecha: av.fecha ? av.fecha.substring(0, 10) : '--', peso: aPeso, grasa: aGrasa, musc: aMusc, edadM: aEdadM });
+                let aP = parseFloat(av.peso || 0);
+                let aG = parseFloat(av.grasa || 0);
+                let aM = (aP * (1 - (aG/100))) * 0.56;
+                let aE = (av.predicta_data && av.predicta_data.edad_metabolica) ? av.predicta_data.edad_metabolica : Math.max(18, Math.round(edad + (aG - (isMale?15:22)) * 0.5));
+                log.push({ s: `S${i + 2}`, f: av.fecha ? av.fecha.substring(0, 10) : '--', p: aP, g: aG, m: aM, e: aE });
             });
         }
 
-        // Generar Tabla
-        let html = '';
-        for (let i = 0; i < historial.length; i++) {
-            let curr = historial[i];
-            let prev = i > 0 ? historial[i-1] : null;
+        // Renderizar el log comparativo
+        log.forEach((curr, i) => {
+            let prev = i > 0 ? log[i-1] : null;
             
-            let deltaStr = `<span class="text-gray-300">--</span>`;
+            // Variación Peso
+            let pVar = "";
             if (prev) {
-                let diff = curr.peso - prev.peso;
-                if (Math.abs(diff) < 0.1) {
-                    deltaStr = `<span class="text-gray-400 font-bold">0.0</span>`;
-                } else {
+                let diff = curr.p - prev.p;
+                if (Math.abs(diff) > 0.1) {
                     let color = diff < 0 ? 'text-emerald-500' : 'text-orange-500';
-                    let sign = diff > 0 ? '+' : '';
-                    deltaStr = `<span class="font-black ${color}">${sign}${convP(diff).toFixed(1)}</span>`;
+                    pVar = `<span class="${color} text-[10px] block font-black">${diff > 0 ? '+' : ''}${convP(diff).toFixed(1)}</span>`;
                 }
             }
 
+            // Indicador de Grasa (Bajar es bueno)
+            let gInd = "";
+            if (prev) {
+                if (curr.g < prev.g) gInd = `<span class="text-emerald-500 ml-1">▼</span>`;
+                else if (curr.g > prev.g) gInd = `<span class="text-orange-500 ml-1">▲</span>`;
+            }
+
+            // Indicador de Músculo (Subir es bueno)
+            let mInd = "";
+            if (prev) {
+                if (curr.m > prev.m) mInd = `<span class="text-indigo-500 ml-1">▲</span>`;
+                else if (curr.m < prev.m) mInd = `<span class="text-orange-500 ml-1">▼</span>`;
+            }
+
             html += `
-                <tr class="${i % 2 !== 0 ? 'bg-slate-50' : 'bg-white'} hover:bg-blue-50 transition">
-                    <td class="py-3 px-4"><span class="font-bold text-slate-800">${curr.sesion}</span><br><span class="text-[10px] font-medium text-slate-400">${curr.fecha}</span></td>
-                    <td class="text-center py-3 font-black text-blue-600">${convP(curr.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
-                    <td class="text-center py-3">${deltaStr}</td>
-                    <td class="text-center py-3 font-bold ${i>0 && curr.grasa < prev.grasa ? 'text-emerald-600' : 'text-slate-700'}">${curr.grasa.toFixed(1)}%</td>
-                    <td class="text-center py-3 font-bold ${i>0 && curr.musc >= prev.musc ? 'text-indigo-600' : 'text-slate-700'}">${convP(curr.musc).toFixed(1)}</td>
-                    <td class="text-center py-3 font-bold ${i>0 && curr.edadM < prev.edadM ? 'text-emerald-600' : 'text-slate-700'}">${curr.edadM} y</td>
+                <tr class="${i === 0 ? 'bg-slate-50' : 'bg-white'} hover:bg-blue-50 transition">
+                    <td class="py-3 px-4"><span class="font-bold text-slate-800">${curr.s}</span><br><span class="text-[9px] text-slate-400">${curr.f}</span></td>
+                    <td class="text-center py-3 font-black text-blue-600">${convP(curr.p).toFixed(1)} ${pVar}</td>
+                    <td class="text-center py-3 font-bold text-slate-700">${curr.g.toFixed(1)}% ${gInd}</td>
+                    <td class="text-center py-3 font-bold text-indigo-900">${convP(curr.m).toFixed(1)} ${mInd}</td>
+                    <td class="text-center py-3 font-bold ${curr.e <= edad ? 'text-emerald-600' : 'text-orange-600'}">${curr.e} y</td>
                 </tr>
             `;
-        }
+        });
+        
         tbody.innerHTML = html;
         document.getElementById('historyModalPanel').style.display = 'block';
     }
 
-    function closeHistory() {
-        document.getElementById('historyModalPanel').style.display = 'none';
-    }
-    // --- FIN FUNCIONES DE HISTORIAL ---
+    function closeHistory() { document.getElementById('historyModalPanel').style.display = 'none'; }
 
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
         let header = document.getElementById('headerBotones');
         let panelBt = document.getElementById('panelBluetooth');
-        
         let originalText = btn.innerText;
         btn.innerText = "⏳ PROCESSING...";
-        
         header.style.display = 'none';
         panelBt.style.display = 'none';
 
-        html2canvas(document.getElementById('captureArea'), {
-            scale: 2, 
-            backgroundColor: "#ffffff",
-            useCORS: true
-        }).then(canvas => {
+        html2canvas(document.getElementById('captureArea'), { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
             header.style.display = 'flex';
             panelBt.style.display = 'flex';
             btn.innerText = originalText;
-            
             let imgData = canvas.toDataURL("image/png");
-            
             let overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.inset = '0';
-            overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
-            overlay.style.zIndex = '9999';
-            overlay.style.display = 'flex';
-            overlay.style.flexDirection = 'column';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            
+            overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+            overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
             let instruction = document.createElement('p');
             instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE";
             instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
-            
             let img = document.createElement('img');
-            img.src = imgData;
-            img.style.maxHeight = '80vh';
-            img.style.maxWidth = '95vw';
-            img.style.borderRadius = '15px';
-            img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
-            
+            img.src = imgData; img.style.maxHeight = '80vh'; img.style.maxWidth = '95vw'; img.style.borderRadius = '15px'; img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
             let closeBtn = document.createElement('button');
-            closeBtn.innerText = "✕ CLOSE PREVIEW";
-            closeBtn.className = "text-gray-400 font-bold mt-6 hover:text-white transition";
+            closeBtn.innerText = "✕ CLOSE PREVIEW"; closeBtn.className = "text-gray-400 font-bold mt-6 hover:text-white transition";
             closeBtn.onclick = () => document.body.removeChild(overlay);
-            
-            overlay.appendChild(instruction);
-            overlay.appendChild(img);
-            overlay.appendChild(closeBtn);
+            overlay.appendChild(instruction); overlay.appendChild(img); overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
-        }).catch(err => {
-            header.style.display = 'flex';
-            panelBt.style.display = 'flex';
-            btn.innerText = originalText;
-            alert("Error generating image.");
         });
     }
 
@@ -364,45 +336,43 @@
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
         let c = currentCalc;
-
         if(metricId === 'weight') {
             title = "TOTAL WEIGHT";
-            desc = `Based on your Day 1 lean mass of ${convP(c.magraBase).toFixed(1)} ${u}, your exact clinical target weight is fixed at ${convP(c.pesoId).toFixed(1)} ${u}. You currently weigh ${convP(c.pesoAct).toFixed(1)} ${u}.`;
+            desc = `Based on your Day 1 lean mass of ${convP(c.magraBase).toFixed(1)} ${u}, your exact clinical target weight is fixed at ${convP(c.pesoId).toFixed(1)} ${u}.`;
             why = `We lock this goal so you only focus on losing pure fat without shifting targets, exactly as the Infra Baldan protocol dictates.`;
         } else if(metricId === 'fat') {
             title = "BODY FAT %";
-            desc = `Your current fat is ${c.grasaAct.toFixed(1)}%. For your specific age and gender, the clinical healthy target is ${c.grasaId.toFixed(1)}%.`;
+            desc = `Current fat: ${c.grasaAct.toFixed(1)}%. Target: ${c.grasaId.toFixed(1)}%.`;
             why = "Excess body fat is heavily linked to cardiovascular risk. This is the primary target for reduction.";
         } else if(metricId === 'lean') {
             title = "LEAN MASS (BASE)";
-            desc = `Your lean mass (bones, organs, muscle, water) is ${convP(c.magraAct).toFixed(1)} ${u}. Our absolute goal is to protect and maintain exactly ${convP(c.magraId).toFixed(1)} ${u}.`;
-            why = "Rapid weight loss often destroys lean mass. We monitor this to ensure you are losing fat, not vital tissue.";
+            desc = `Base lean mass: ${convP(c.magraAct).toFixed(1)} ${u}. Goal: Protect at least ${convP(c.magraId).toFixed(1)} ${u}.`;
+            why = "We monitor this to ensure you are losing fat, not vital tissue.";
         } else if(metricId === 'muscle') {
             title = "SKELETAL MUSCLE";
-            desc = `You have ${convP(c.muscAct).toFixed(1)} ${u} of active muscle. The baseline required to support your ideal frame is ${convP(c.muscId).toFixed(1)} ${u}.`;
-            why = "Muscle burns calories. Building and preserving muscle fiber actively speeds up your metabolism.";
+            desc = `Active muscle: ${convP(c.muscAct).toFixed(1)} ${u}. Baseline required: ${convP(c.muscId).toFixed(1)} ${u}.`;
+            why = "Muscle burns calories. Building fiber actively speeds up your metabolism.";
         } else if(metricId === 'water') {
             title = "BODY WATER";
-            desc = `Your hydration level is ${c.aguaAct.toFixed(1)}%. The optimal clinical range is generally ${c.aguaId}%.`;
-            why = "Proper hydration is critical for cellular function and optimal fat oxidation during treatment.";
+            desc = `Hydration: ${c.aguaAct.toFixed(1)}%. Optimal range: ${c.aguaId}%.`;
+            why = "Proper hydration is critical for cellular function and optimal fat oxidation.";
         } else if(metricId === 'bmi') {
-            title = "BODY MASS INDEX (BMI)";
-            desc = `Your BMI is ${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}. The target is ${c.imcId.toFixed(1)}.`;
-            why = "A standardized medical screening tool used to categorize risk related to weight relative to height.";
+            title = "BMI";
+            desc = `Current: ${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}. Target: ${c.imcId.toFixed(1)}.`;
+            why = "A standardized tool to categorize risk related to weight relative to height.";
         } else if(metricId === 'visceral') {
             title = "VISCERAL FAT";
-            desc = `Your visceral fat level is ${isNaN(c.viscAct) ? '--' : c.viscAct}. A healthy limit is level ${c.viscId} or below.`;
-            why = "High visceral fat is a direct leading cause of metabolic syndrome, insulin resistance, and diabetes.";
+            desc = `Level: ${isNaN(c.viscAct) ? '--' : c.viscAct}. Healthy limit: Level 9.`;
+            why = "High visceral fat leads to metabolic syndrome and insulin resistance.";
         } else if(metricId === 'age') {
             title = "METABOLIC AGE";
-            desc = `Your chronological age is ${c.edadMId}, but biologically your body performs like someone who is ${isNaN(c.edadMAct) ? '--' : c.edadMAct} years old.`;
-            why = "If your metabolic age is higher than your actual age, your cellular structure is wearing down faster due to poor composition.";
+            desc = `Chronological: ${c.edadMId} yrs. Biological performance: ${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs.`;
+            why = "Higher metabolic age means your cellular structure is wearing down faster.";
         } else if(metricId === 'bmr') {
             title = "BASAL METABOLIC RATE (BMR)";
-            desc = `You naturally burn ${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal at rest. Reaching your composition goal will adjust this to ${Math.round(c.bmrId)} kcal/day.`;
-            why = "A higher BMR means your body naturally incinerates more fat throughout the day effortlessly.";
+            desc = `Resting burn: ${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal. Target: ${Math.round(c.bmrId)} kcal/day.`;
+            why = "Higher BMR means your body incinerates more fat effortlessly.";
         }
-
         document.getElementById('infoTitle').innerText = title;
         document.getElementById('infoDesc').innerText = desc;
         document.getElementById('infoWhy').innerText = why;
@@ -420,33 +390,11 @@
     function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
         let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
         let isMale = sexoSeguro.startsWith('m');
-        
         let baseGrasa = isMale ? 12 : 20;
         let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-        
-        let magraIdeal = masa_magra_actual; 
-        let pIdeal = magraIdeal / (1 - (gIdeal / 100)); 
-        
-        return { peso: pIdeal, grasa_perc: gIdeal, magra: magraIdeal, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
-    }
-
-    function renderDiff(act, ini, isLowerBetter, suffix) {
-        if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
-        let diff = act - ini;
-        if(Math.abs(diff) < 0.1) return `<span class="text-gray-400 font-bold">0.0 <span class="text-[8px]">${suffix}</span></span>`;
-        let sign = diff > 0 ? '+' : '';
-        let color = isLowerBetter ? (diff < 0 ? 'text-emerald-500' : 'text-orange-500') : (diff > 0 ? 'text-emerald-500' : 'text-orange-500');
-        return `<span class="font-black ${color}">${sign}${diff.toFixed(1)} <span class="text-[8px]">${suffix}</span></span>`;
-    }
-
-    function renderDiffInt(act, ini, isLowerBetter, suffix) {
-        if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
-        let diff = Math.round(act - ini);
-        if(diff === 0) return `<span class="text-gray-400 font-bold">0 <span class="text-[8px]">${suffix}</span></span>`;
-        let sign = diff > 0 ? '+' : '';
-        let color = isLowerBetter ? (diff < 0 ? 'text-emerald-500' : 'text-orange-500') : (diff > 0 ? 'text-emerald-500' : 'text-orange-500');
-        return `<span class="font-black ${color}">${sign}${diff} <span class="text-[8px]">${suffix}</span></span>`;
+        let pIdeal = masa_magra_actual / (1 - (gIdeal / 100)); 
+        return { peso: pIdeal, grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
     function renderTable(data) {
@@ -456,10 +404,7 @@
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
-            
-            let sexoSeguro = p.sexo ? String(p.sexo).toLowerCase() : 'm';
-            let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
-            
+            let sexEn = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m') ? 'M' : 'F';
             tr.innerHTML = `
                 <td class="px-6 py-3"><span class="id-badge">${p.id}</span></td>
                 <td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td>
@@ -475,314 +420,158 @@
         document.getElementById('currentUnitText').innerText = (unitMode === 'KG' ? 'KG / CM' : 'LB / IN'); 
         renderTable(globalData); 
         if (currentPatient && document.getElementById('modalDetalle').style.display === 'block') selectPatient(currentPatient);
+        // Actualizar historial al vuelo si está abierto
+        if (document.getElementById('historyModalPanel').style.display === 'block') openHistory();
     }
 
     function selectPatient(p) {
         currentPatient = p;
-        
         let pOrig = globalData.find(c => c.id === p.id) || p;
-        let sexoSeguro = pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm';
-        let sexEn = sexoSeguro.startsWith('m') ? 'M' : 'F';
-        let isMale = sexoSeguro.startsWith('m');
-        
+        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
         let lastUpdateDate = pOrig.fechaInicio ? pOrig.fechaInicio.substring(0, 10) : '--';
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sortedAvances = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             lastUpdateDate = sortedAvances[sortedAvances.length - 1].fecha.substring(0, 10);
         }
-
         document.getElementById('modalID').innerText = `ID: ${pOrig.id}`;
         document.getElementById('modalNombre').innerText = pOrig.nombre || 'Patient';
-        document.getElementById('modalInfo').innerText = `${sexEn} | ${pOrig.edad || 0} YRS | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
-        
-        let edad = parseFloat(pOrig.edad || 0);
-        let altura = parseFloat(pOrig.altura || 0);
-
-        let iniPeso = parseFloat(pOrig.peso || 0);
-        let iniGrasa = parseFloat(pOrig.grasa || 0);
+        document.getElementById('modalInfo').innerText = `${isMale?'M':'F'} | ${pOrig.edad || 0} YRS | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
+        let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
+        let iniPeso = parseFloat(pOrig.peso || 0), iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
-        let iniMusc = iniFfm * 0.56;
-        let iniAgua = parseFloat(pOrig.agua_corporal_perc || ((iniFfm * 0.732 / iniPeso) * 100));
-        let iniImc = iniPeso / Math.pow(altura/100, 2);
-        let iniVisc = Math.max(1, Math.round(pOrig.grasa_visceral || ((iniGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
-        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
-        let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
-        let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
-        
+        let actPeso = p.isTempScan ? parseFloat(p.peso) : iniPeso, actGrasa = p.isTempScan ? parseFloat(p.grasa) : iniGrasa;
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
-            let sorted = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-            let last = sorted[sorted.length - 1];
-            actPeso = parseFloat(last.peso || actPeso);
-            actGrasa = parseFloat(last.grasa || actGrasa);
-            if(last.predicta_data) {
-                actViscVal = last.predicta_data.visceral || actViscVal;
-                actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal;
-                actBmrVal = last.predicta_data.bmr || actBmrVal;
-                actAguaVal = last.predicta_data.agua_perc || actAguaVal;
-            }
+            let last = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).pop();
+            actPeso = parseFloat(last.peso); actGrasa = parseFloat(last.grasa);
         }
-        
-        if (p.isTempScan) {
-            actPeso = parseFloat(p.peso);
-            actGrasa = parseFloat(p.grasa);
-            actViscVal = p.grasa_visceral;
-            actEdadMVal = p.edad_metabolica;
-            actBmrVal = p.bmr_kcal;
-            actAguaVal = p.agua_corporal_perc;
-        }
-
-        let actFfm = actPeso * (1 - (actGrasa/100));
-        let actMusc = actFfm * 0.56;
-        let actAgua = parseFloat(actAguaVal || ((actFfm * 0.732 / actPeso) * 100));
-        let actImc = actPeso / Math.pow(altura/100, 2);
-        let actVisc = Math.max(1, Math.round(actViscVal || ((actGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
-        let actEdadM = Math.max(18, Math.round(actEdadMVal || (edad + (actGrasa - (isMale?15:22)) * 0.5)));
-        let actBmr = parseFloat(actBmrVal || (370 + (21.6 * actFfm)));
-
-        let metas = calcularMetasIdeales(edad, sexoSeguro, iniFfm);
-
-        currentCalc = {
-            pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc,
-            magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56,
-            aguaAct: actAgua, aguaId: metas.agua_perc,
-            imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9,
-            edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra)
-        };
+        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+        currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
 
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
+        document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1);
+        document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
+        document.getElementById('tGrasaAct').innerText = actGrasa.toFixed(1);
+        document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
-        document.getElementById('tMuscIni').innerText = convP(iniMusc).toFixed(1);
-        document.getElementById('tAguaIni').innerText = iniAgua.toFixed(1);
-        document.getElementById('tImcIni').innerText = isNaN(iniImc) ? '--' : iniImc.toFixed(1);
-        document.getElementById('tViscIni').innerText = isNaN(iniVisc) ? '--' : iniVisc;
-        document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
-        document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
+        document.getElementById('tMagraAct').innerText = convP(actFfm).toFixed(1);
+        document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1);
+        document.getElementById('tMuscIni').innerText = convP(iniFfm*0.56).toFixed(1);
+        document.getElementById('tMuscAct').innerText = convP(actFfm*0.56).toFixed(1);
+        document.getElementById('tMuscId').innerText = convP(metas.magra*0.56).toFixed(1);
+        document.getElementById('tAguaAct').innerText = currentCalc.aguaAct.toFixed(1);
+        document.getElementById('tAguaId').innerText = metas.agua_perc;
+        document.getElementById('tImcAct').innerText = currentCalc.imcAct.toFixed(1);
+        document.getElementById('tImcId').innerText = metas.imc;
+        document.getElementById('tViscAct').innerText = currentCalc.viscAct;
+        document.getElementById('tViscId').innerText = "9";
+        document.getElementById('tEdadMAct').innerText = currentCalc.edadMAct;
+        document.getElementById('tEdadMId').innerText = edad;
+        document.getElementById('tBmrAct').innerText = Math.round(currentCalc.bmrAct);
+        document.getElementById('tBmrId').innerText = Math.round(currentCalc.bmrId);
+        
+        let ageDiff = currentCalc.edadMId - currentCalc.edadMAct;
+        document.getElementById('rejuvenationBadge').style.display = ageDiff > 0 ? 'block' : 'none';
+        if(ageDiff > 0) document.getElementById('yearsRegained').innerText = `-${ageDiff} YRS`;
 
-        let difPesoGoal = actPeso - metas.peso;
-        document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
-        document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
-        document.getElementById('tPesoPrg').innerHTML = renderDiff(convP(actPeso), convP(iniPeso), true, lblU);
-        document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
-        document.getElementById('tPesoEst').innerText = (difPesoGoal > 0 ? 'SURPLUS: ' : 'DEFICIT: ') + Math.abs(convP(difPesoGoal)).toFixed(1) + ' ' + lblU;
-        document.getElementById('tPesoEst').className = difPesoGoal > 0 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tGrasaAct').innerText = actGrasa.toFixed(1) + ' %';
-        document.getElementById('tGrasaAct').className = actGrasa > metas.grasa_perc ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tGrasaPrg').innerHTML = renderDiff(actGrasa, iniGrasa, true, '%');
-        document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1) + ' %';
-        document.getElementById('tGrasaEst').innerText = actGrasa <= metas.grasa_perc ? 'OPTIMAL' : 'FAT OXIDATION';
-        document.getElementById('tGrasaEst').className = actGrasa <= metas.grasa_perc ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
-
-        document.getElementById('tMagraAct').innerText = convP(actFfm).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMagraAct').className = actFfm < metas.magra ? 'text-center font-black text-orange-500' : 'text-center font-black text-slate-700';
-        document.getElementById('tMagraPrg').innerHTML = renderDiff(convP(actFfm), convP(iniFfm), false, lblU);
-        document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMagraEst').innerText = actFfm >= metas.magra ? 'PROTECTED' : 'AT RISK';
-        document.getElementById('tMagraEst').className = actFfm >= metas.magra ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
-
-        let difMuscGoal = actMusc - (metas.magra * 0.56);
-        document.getElementById('tMuscAct').innerText = convP(actMusc).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscAct').className = difMuscGoal < 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-600';
-        document.getElementById('tMuscPrg').innerHTML = renderDiff(convP(actMusc), convP(iniMusc), false, lblU);
-        document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscEst').innerText = difMuscGoal >= 0 ? 'HYPERTROPHY' : 'NEEDS FIBER';
-        document.getElementById('tMuscEst').className = difMuscGoal >= 0 ? 'text-right text-[9px] uppercase font-bold text-indigo-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
-
-        document.getElementById('tAguaAct').innerText = actAgua.toFixed(1) + ' %';
-        document.getElementById('tAguaAct').className = actAgua < (metas.agua_perc - 2) ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-500';
-        document.getElementById('tAguaPrg').innerHTML = renderDiff(actAgua, iniAgua, false, '%');
-        document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
-        document.getElementById('tAguaEst').innerText = actAgua >= metas.agua_perc ? 'HYDRATED' : 'DEHYDRATED';
-        document.getElementById('tAguaEst').className = actAgua >= metas.agua_perc ? 'text-right text-[9px] uppercase font-bold text-blue-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
-
-        document.getElementById('tImcAct').innerText = isNaN(actImc) ? '--' : actImc.toFixed(1);
-        document.getElementById('tImcAct').className = (actImc - metas.imc) > 2 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tImcPrg').innerHTML = renderDiff(actImc, iniImc, true, '');
-        document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
-        document.getElementById('tImcEst').innerText = (actImc - metas.imc) > 2 ? 'OVERWEIGHT' : 'BALANCED';
-        document.getElementById('tImcEst').className = (actImc - metas.imc) > 2 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tViscAct').innerText = isNaN(actVisc) ? '--' : actVisc + ' Lvl';
-        document.getElementById('tViscAct').className = actVisc > 9 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tViscPrg').innerHTML = renderDiffInt(actVisc, iniVisc, true, 'Lvl');
-        document.getElementById('tViscId').innerText = '≤ 9 Lvl';
-        document.getElementById('tViscEst').innerText = actVisc > 9 ? 'CRITICAL' : 'OPTIMAL';
-        document.getElementById('tViscEst').className = actVisc > 9 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tEdadMAct').innerText = isNaN(actEdadM) ? '--' : actEdadM + ' yrs';
-        document.getElementById('tEdadMAct').className = actEdadM > edad ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tEdadMPrg').innerHTML = renderDiffInt(actEdadM, iniEdadM, true, 'yrs');
-        document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' yrs';
-        document.getElementById('tEdadMEst').innerText = actEdadM > edad ? 'OXIDATIVE' : 'REJUVENATED';
-        document.getElementById('tEdadMEst').className = actEdadM > edad ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tBmrAct').innerText = isNaN(actBmr) ? '--' : Math.round(actBmr) + ' kcal';
-        document.getElementById('tBmrAct').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-center font-black text-orange-500' : 'text-center font-black text-slate-800';
-        document.getElementById('tBmrPrg').innerHTML = renderDiffInt(actBmr, iniBmr, false, 'kcal');
-        document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
-        document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
-        document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        let ageDiff = iniEdadM - actEdadM; 
-        let badge = document.getElementById('rejuvenationBadge');
-        if (!isNaN(ageDiff) && ageDiff > 0) {
-            badge.style.display = 'block';
-            document.getElementById('yearsRegained').innerText = `-${ageDiff} YRS`;
-        } else {
-            badge.style.display = 'none';
-        }
-
-        let semanasParaMeta = Math.max(0, difPesoGoal) / (2 * 0.453592); 
-        if(semanasParaMeta <= 0) {
-            document.getElementById('progDateText').innerText = "TODAY";
-            document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
-        } else {
-            let fechaMeta = new Date(); fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
-            document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-            document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
-        }
         document.getElementById('modalDetalle').style.display = 'block';
-        initChart(pOrig, p, difPesoGoal, semanasParaMeta);
+        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
     }
 
-    function initChart(pOrig, pTemp, difPesoKG, semanasRestantes) {
+    function initChart(pO, pT, dP, sR) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        
-        let registros = [{fecha: new Date(pOrig.fechaInicio), pesoKG: parseFloat(pOrig.peso)}];
-        if(pOrig.avances) pOrig.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
-        
-        if(pTemp.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pTemp.peso)});
-        
-        registros.sort((a,b) => a.fecha - b.fecha);
-        let labels = [], realData = [], idealData = []; 
-        registros.forEach((reg, i) => { 
-            let sNum = i + 1;
-            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
-            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
-            realData.push(convP(reg.pesoKG)); 
-            idealData.push(null); 
-        });
-        
-        if (difPesoKG > 0) {
-            let ultimoPesoKG = registros[registros.length-1].pesoKG;
-            let sesionesActuales = registros.length;
-            idealData[idealData.length-1] = convP(ultimoPesoKG); 
-            let puntosProyeccion = 4;
-            for(let i=1; i<=puntosProyeccion; i++) {
-                let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
-                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
-                realData.push(null);
-                idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
-            }
-        }
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: labels, 
-                datasets: [
-                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
-                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
-                ] 
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } }
-        });
+        let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
+        if(pO.avances) pO.avances.forEach(a => r.push({fecha: new Date(a.fecha), p: parseFloat(a.peso)}));
+        if(pT.isTempScan) r.push({fecha: new Date(), p: parseFloat(pT.peso)});
+        r.sort((a,b) => a.fecha - b.fecha);
+        let l = [], rd = [], id = [];
+        r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')' } } } } });
     }
 
     async function saveNewClient() {
-        const reqFields = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
-        for(let id of reqFields) { if(!document.getElementById(id).value) { alert("Please complete all fields and read scale."); return; } }
-        let rawGender = document.getElementById('newGender').value;
-        let gndr = rawGender === "Male" ? "Masculino" : "Femenino";
-        
-        const cliente = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: gndr, edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
+        const f = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
+        for(let id of f) { if(!document.getElementById(id).value) { alert("Complete fields."); return; } }
+        const c = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value==='Male'?'Masculino':'Femenino', edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusNew').innerText = "SAVING...";
-        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente }) });
+        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente: c }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
     }
 
     async function addSession() {
-        let w = document.getElementById('sessWeight').value; let f = document.getElementById('sessFat').value;
-        if(!w) { alert("Please start scan or enter weight manually."); return; }
-        const avance = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
-        let btnStatus = document.getElementById('btStatusSeg');
-        
-        btnStatus.innerText = "SYNCHRONIZING...";
+        let w = document.getElementById('sessWeight').value, f = document.getElementById('sessFat').value;
+        if(!w) return;
+        const a = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
+        document.getElementById('btStatusSeg').innerText = "SYNCHRONIZING...";
         try {
-            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance }) });
-            btnStatus.innerText = "DATA UPDATED ✅";
-            setTimeout(() => {
-                datosClinicosTemporales = {}; 
-                closeModal(); 
-                fetchData();
-            }, 1200);
-        } catch(e) {
-            btnStatus.innerText = "❌ SAVE ERROR";
-        }
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: a }) });
+            document.getElementById('btStatusSeg').innerText = "DATA UPDATED ✅";
+            setTimeout(() => { datosClinicosTemporales = {}; closeModal(); fetchData(); }, 1200);
+        } catch(e) { document.getElementById('btStatusSeg').innerText = "❌ ERROR"; }
     }
 
-    function calcularComposicionTotal(peso, ohms, estatura, edad, sexo) {
-        const h_m = estatura / 100, imc = peso / (h_m * h_m), indiceZ = (estatura * estatura) / ohms;
-        let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
-        let isMale = sexoSeguro.startsWith('m');
-        let ffm = (isMale ? (0.39 * indiceZ) + (0.18 * peso) + (0.16 * estatura) - (0.09 * edad) + 5.0 : (0.38 * indiceZ) + (0.15 * peso) + (0.12 * estatura) - (0.07 * edad) + 4.5);
-        if (imc > 28) ffm += (imc - 28) * 0.15;
-        let pg = ((peso - ffm) / peso) * 100;
-        let mus = ffm * 0.56, agua = (ffm * 0.732 / peso) * 100, bmr = 370 + (21.6 * ffm);
-        let visc = (pg * 0.25) + (edad * 0.12) - (isMale ? 3 : 6);
-        let idealF = isMale ? 15 : 22; let edadM = edad + (pg - idealF) * 0.5;
-        return { grasa_porcentaje: pg.toFixed(1), musculo_magra: ffm.toFixed(1), musculo: mus.toFixed(1), agua_perc: agua.toFixed(1), visceral: Math.max(1, Math.round(visc)), edad_metabolica: Math.max(18, Math.round(edadM)), bmr: Math.round(bmr), ohms: ohms };
+    function renderDiff(act, ini, isLowerBetter, suffix) {
+        if(isNaN(act) || isNaN(ini) || ini === 0) return `--`;
+        let d = act - ini; if(Math.abs(d) < 0.1) return `0.0`;
+        let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
+        return `<span class="${c}">${d > 0 ? '+' : ''}${d.toFixed(1)}</span>`;
     }
 
     async function conectarBáscula(contexto) {
-        let edad, alt, sexo, status, wIn, fIn;
+        let ed, alt, sex, st, wI, fI;
         if(contexto === 'nuevo') {
-            edad = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; 
-            let rawGender = document.getElementById('newGender').value;
-            sexo = rawGender === "Male" ? "Masculino" : "Femenino";
-            status = document.getElementById('btStatusNew'); wIn = document.getElementById('newWeight'); fIn = document.getElementById('newFat');
+            ed = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; sex = document.getElementById('newGender').value==='Male'?'Masculino':'Femenino';
+            st = document.getElementById('btStatusNew'); wI = document.getElementById('newWeight'); fI = document.getElementById('newFat');
         } else {
-            edad = currentPatient.edad; alt = currentPatient.altura; sexo = currentPatient.sexo;
-            status = document.getElementById('btStatusSeg'); wIn = document.getElementById('sessWeight'); fIn = document.getElementById('sessFat');
+            ed = currentPatient.edad; alt = currentPatient.altura; sex = currentPatient.sexo;
+            st = document.getElementById('btStatusSeg'); wI = document.getElementById('sessWeight'); fI = document.getElementById('sessFat');
         }
-        if(!edad || !alt) { alert("Age and height required."); return; }
+        if(!ed || !alt) return;
         try {
-            const device = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
-            const server = await device.gatt.connect();
-            const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
-            const cNoti = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-            const cWrit = await service.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
-            await cNoti.startNotifications();
-            let lecturaFinalizada = false;
-            cNoti.addEventListener('characteristicvaluechanged', (e) => {
-                let data = new Uint8Array(e.target.value.buffer);
-                if (data[0] === 0x10 && data.length >= 10) {
-                    let p = ((data[3] << 8) | data[4]) / 100, ohms = (data[8] << 8) | data[9];
-                    if (!lecturaFinalizada) wIn.value = p.toFixed(1);
-                    if (ohms > 100 && !lecturaFinalizada) {
-                        lecturaFinalizada = true;
-                        datosClinicosTemporales = calcularComposicionTotal(p, ohms, parseFloat(alt), parseFloat(edad), sexo);
-                        fIn.value = datosClinicosTemporales.grasa_porcentaje;
+            const dev = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
+            const srv = await dev.gatt.connect();
+            const svc = await srv.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+            const cN = await svc.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+            const cW = await svc.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
+            await cN.startNotifications();
+            let fin = false;
+            cN.addEventListener('characteristicvaluechanged', (e) => {
+                let d = new Uint8Array(e.target.value.buffer);
+                if (d[0] === 0x10 && d.length >= 10) {
+                    let p = ((d[3] << 8) | d[4]) / 100, oh = (d[8] << 8) | d[9];
+                    if (!fin) wI.value = p.toFixed(1);
+                    if (oh > 100 && !fin) {
+                        fin = true;
+                        datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex);
+                        fI.value = datosClinicosTemporales.grasa_porcentaje;
                         if (contexto !== 'nuevo') {
-                            let pTemp = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, masa_muscular_kg: datosClinicosTemporales.musculo, agua_corporal_perc: datosClinicosTemporales.agua_perc, grasa_visceral: datosClinicosTemporales.visceral, edad_metabolica: datosClinicosTemporales.edad_metabolica, bmr_kcal: datosClinicosTemporales.bmr, isTempScan: true };
-                            selectPatient(pTemp); wIn.value = p.toFixed(1); fIn.value = datosClinicosTemporales.grasa_porcentaje;
+                            let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true };
+                            selectPatient(pT);
                         }
-                        status.innerText = "✅ SCAN COMPLETED. PRESS SAVE.";
-                        setTimeout(() => device.gatt.disconnect(), 1500);
+                        st.innerText = "✅ SCAN COMPLETED.";
+                        setTimeout(() => dev.gatt.disconnect(), 1500);
                     }
                 }
             });
-            setTimeout(() => cWrit.writeValueWithoutResponse(new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x01, 0x00, 0x19])), 1000);
-        } catch (e) { status.innerText = "❌ ERROR: " + e; }
+            setTimeout(() => cW.writeValueWithoutResponse(new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x01, 0x00, 0x19])), 1000);
+        } catch (e) { st.innerText = "❌ ERROR: " + e; }
+    }
+
+    function calcularComposicionTotal(p, oh, h, ed, sx) {
+        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh;
+        let isM = String(sx).toLowerCase().startsWith('m');
+        let ffm = (isM ? (0.39 * z) + (0.18 * p) + (0.16 * h) - (0.09 * ed) + 5.0 : (0.38 * z) + (0.15 * p) + (0.12 * h) - (0.07 * ed) + 4.5);
+        if (imc > 28) ffm += (imc - 28) * 0.15;
+        let pg = ((p - ffm) / p) * 100;
+        return { grasa_porcentaje: pg.toFixed(1), visceral: Math.max(1, Math.round((pg*0.25)+(ed*0.12)-(isM?3:6))), edad_metabolica: Math.max(18, Math.round(ed+(pg-(isM?15:22))*0.5)), bmr: Math.round(370+(21.6*ffm)), agua_perc: (ffm*0.732/p)*100 };
     }
 
     function openNewClientModal() { document.getElementById('modalNuevo').style.display = 'block'; }
     function closeNewClientModal() { document.getElementById('modalNuevo').style.display = 'none'; }
-    function closeModal() { document.getElementById('modalDetalle').style.display = 'none'; document.body.style.overflow = 'auto'; }
-    function filterTable() { const q = document.getElementById('searchInput').value.toLowerCase(), rows = document.querySelectorAll('#clientTableBody tr'); rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none'); }
+    function closeModal() { document.getElementById('modalDetalle').style.display = 'none'; }
+    function filterTable() { const q = document.getElementById('searchInput').value.toLowerCase(); document.querySelectorAll('#clientTableBody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none'); }
     window.onload = fetchData;
 </script>
 </body>
