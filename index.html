@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.12</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.13</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.12 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.13 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -112,7 +112,7 @@
                     </div>
                     <div class="flex justify-end gap-2">
                         <div id="rejuvenationBadge" class="bg-emerald-500 text-white px-4 py-2 rounded-[12px] shadow-lg text-center hidden">
-                            <p class="text-[7px] uppercase font-bold italic opacity-90 tracking-widest">BIO-AGE</p>
+                            <p class="text-[7px] uppercase font-bold italic opacity-90 tracking-widest">YEARS REGAINED</p>
                             <p id="yearsRegained" class="text-base font-black italic leading-none mt-1">--</p>
                         </div>
                         <div class="bg-blue-600 text-white px-4 py-2 rounded-[12px] shadow-lg text-center">
@@ -485,6 +485,7 @@
         
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
         
+        // VALORES INICIALES (DÍA 1)
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -495,6 +496,7 @@
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
+        // VALORES ACTUALES
         let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
         
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
@@ -526,6 +528,7 @@
 
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56, aguaAct: actAgua, aguaId: metas.agua_perc, imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9, edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra) };
 
+        // ACTUALIZACIÓN DEL DOM - DÍA 1
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
@@ -536,6 +539,7 @@
         document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
         document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
 
+        // ACTUALIZACIÓN DEL DOM - CURRENT, PROGRESS, GOAL, STATUS
         let difPesoGoal = actPeso - metas.peso;
         document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
@@ -601,14 +605,10 @@
         document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
         document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
 
-        let ageDiff = iniEdadM - actEdadM;
-        let badge = document.getElementById('rejuvenationBadge');
-        if (!isNaN(ageDiff) && ageDiff > 0) {
-            badge.style.display = 'block';
-            document.getElementById('yearsRegained').innerText = `-${ageDiff} YRS`;
-        } else {
-            badge.style.display = 'none';
-        }
+        // LÓGICA REJUVENATION BADGE CORREGIDA
+        let ageDiff = currentCalc.edadMId - currentCalc.edadMAct;
+        document.getElementById('rejuvenationBadge').style.display = ageDiff > 0 ? 'block' : 'none';
+        if(ageDiff > 0) document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`;
 
         let semanasParaMeta = Math.max(0, difPesoGoal) / (2 * 0.453592); 
         if(semanasParaMeta <= 0) {
@@ -620,33 +620,61 @@
             document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
-        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
+        
+        initChart(pOrig, p, actPeso - metas.peso, semanasParaMeta);
     }
 
     function initChart(pO, pT, difPesoKG, semanasRestantes) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
-        if(pO.avances) pO.avances.forEach(a => r.push({fecha: new Date(a.fecha), p: parseFloat(a.peso)}));
-        if(pT.isTempScan) r.push({fecha: new Date(), p: parseFloat(pT.peso)});
-        r.sort((a,b) => a.fecha - b.fecha);
-        let l = [], rd = [], id = [];
-        r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
+        
+        let registros = [{fecha: new Date(pO.fechaInicio), pesoKG: parseFloat(pO.peso)}];
+        if(pO.avances) pO.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
+        
+        if(pT.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pT.peso)});
+        
+        registros.sort((a,b) => a.fecha - b.fecha);
+        let labels = [], realData = [], idealData = []; 
+        registros.forEach((reg, i) => { 
+            let sNum = i + 1;
+            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
+            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
+            realData.push(convP(reg.pesoKG)); 
+            idealData.push(null); 
+        });
         
         if (difPesoKG > 0) {
-            let ultimoPesoKG = r[r.length-1].p;
-            let sesionesActuales = r.length;
-            id[id.length-1] = convP(ultimoPesoKG); 
+            let ultimoPesoKG = registros[registros.length-1].pesoKG;
+            let sesionesActuales = registros.length;
+            idealData[idealData.length-1] = convP(ultimoPesoKG); 
             let puntosProyeccion = 4;
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                l.push('S' + Math.round(proySesion)); 
-                rd.push(null);
-                id.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
+                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
+                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
+                realData.push(null);
+                idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
         
-        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual History', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } } });
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: labels, 
+                datasets: [
+                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
+                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
+                ] 
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { legend: { display: true, position: 'bottom' } }, 
+                scales: { 
+                    y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, 
+                    x: { ticks: { font: { size: 9 } } } 
+                } 
+            }
+        });
     }
 
     async function saveNewClient() {
