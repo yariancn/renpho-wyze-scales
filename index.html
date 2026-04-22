@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.11</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.12</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -16,15 +16,12 @@
         #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
-        
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 6px 4px; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
-        
         .val-ideal { color: #10b981; font-weight: 900; }
         .id-badge { background: #1e293b; color: #60a5fa; padding: 2px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
         .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; font-size: 11px; }
         .info-btn:hover { color: #3b82f6; }
-        
         @media print {
             html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
@@ -47,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.11 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.12 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -179,11 +176,11 @@
     <div id="infoModalPanel" class="no-print">
         <div class="bg-white max-w-sm m-auto mt-[30vh] p-5 rounded-2xl shadow-2xl border border-slate-100 relative">
             <button onclick="closeInfo()" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 font-bold text-lg">✕</button>
-            <h3 id="infoTitle" class="text-base font-black text-blue-900 uppercase italic mb-1">Title</h3>
-            <p id="infoDesc" class="text-[13px] text-slate-700 mb-3 font-medium leading-relaxed">Description</p>
-            <div class="bg-blue-50 p-2 rounded-lg border border-blue-100">
-                <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">WHY IT MATTERS</span>
-                <p id="infoWhy" class="text-[11px] text-blue-900 font-bold mt-1">Why</p>
+            <h3 id="infoTitle" class="text-lg font-black text-blue-900 uppercase italic mb-2">Title</h3>
+            <p id="infoDesc" class="text-[13px] text-slate-700 mb-4 font-medium leading-relaxed">Description</p>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">WHY IT MATTERS TO YOU</span>
+                <p id="infoWhy" class="text-[12px] text-blue-900 font-medium mt-1 leading-relaxed">Why</p>
             </div>
         </div>
     </div>
@@ -301,6 +298,7 @@
 
     function closeHistory() { document.getElementById('historyModalPanel').style.display = 'none'; }
 
+    // --- FUNCIÓN DE CAPTURA DE PANTALLA ---
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
@@ -333,54 +331,78 @@
         });
     }
 
+    // --- NUEVO DICCIONARIO CLÍNICO DINÁMICO ---
     function showInfo(metricId) {
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
         let c = currentCalc;
+        
         if(metricId === 'weight') {
             title = "TOTAL WEIGHT";
-            desc = `Based on your Day 1 lean mass of ${convP(c.magraBase).toFixed(1)} ${u}, your exact clinical target weight is fixed at ${convP(c.pesoId).toFixed(1)} ${u}.`;
-            why = `We lock this goal so you only focus on losing pure fat without shifting targets, exactly as the Infra Baldan protocol dictates.`;
-        } else if(metricId === 'fat') {
+            let diff = c.pesoAct - c.pesoId;
+            let statusText = diff > 0 ? `Currently, you have a surplus of <b>${convP(diff).toFixed(1)} ${u}</b> to lose.` : `You are at or below your target weight.`;
+            
+            desc = `<b>What it is:</b> The total sum of your body mass (fat, muscle, water, and bone).<br><br><b>Your Status:</b> Based on the exact lean mass you had on Day 1, your permanent clinical target is fixed at <b>${convP(c.pesoId).toFixed(1)} ${u}</b>. ${statusText}`;
+            why = diff > 0 ? `Carrying excess weight forces your heart to work harder and adds destructive mechanical stress to your joints (like your knees and lower back). Reaching your target reduces internal inflammation and cardiovascular risk.` : `Maintaining this optimal weight reduces mechanical wear on your joints and keeps your cardiovascular system running efficiently. Excellent work.`;
+        } 
+        else if(metricId === 'fat') {
             title = "BODY FAT %";
-            desc = `Current fat: ${c.grasaAct.toFixed(1)}%. Target: ${c.grasaId.toFixed(1)}%.`;
-            why = "Excess body fat is heavily linked to cardiovascular risk. This is the primary target for reduction.";
-        } else if(metricId === 'lean') {
+            let diffFat = c.grasaAct - c.grasaId;
+            
+            desc = `<b>What it is:</b> The percentage of your total weight that is strictly fat tissue.<br><br><b>Your Status:</b> You are currently at <b>${c.grasaAct.toFixed(1)}%</b>. For your specific age and gender, the clinical healthy target is <b>${c.grasaId.toFixed(1)}%</b>.`;
+            why = diffFat > 0 ? `Excess body fat acts as an active organ, constantly releasing inflammatory hormones into your bloodstream. Oxidizing this fat is our absolute priority to reverse insulin resistance and protect your heart.` : `Your body fat is in the optimal range. This promotes healthy hormone production, stable energy levels, and provides strong protection against metabolic diseases.`;
+        } 
+        else if(metricId === 'lean') {
             title = "LEAN MASS (BASE)";
-            desc = `Base lean mass: ${convP(c.magraAct).toFixed(1)} ${u}. Goal: Protect at least ${convP(c.magraId).toFixed(1)} ${u}.`;
-            why = "We monitor this to ensure you are losing fat, not vital tissue.";
-        } else if(metricId === 'muscle') {
+            
+            desc = `<b>What it is:</b> Everything in your body that isn't fat (your bones, organs, blood, and muscle).<br><br><b>Your Status:</b> You started with <b>${convP(c.magraBase).toFixed(1)} ${u}</b> of lean mass. Our goal is to protect it. You currently have <b>${convP(c.magraAct).toFixed(1)} ${u}</b>.`;
+            why = c.magraAct < c.magraBase ? `<b>Warning:</b> You are losing vital tissue, not just fat. This can weaken your immune system and bone density. We need to adjust your nutrition to protect your base.` : `<b>Protected:</b> You are successfully retaining your vital physical structure while cutting fat. This is the gold standard of healthy, sustainable weight loss.`;
+        } 
+        else if(metricId === 'muscle') {
             title = "SKELETAL MUSCLE";
-            desc = `Active muscle: ${convP(c.muscAct).toFixed(1)} ${u}. Baseline required: ${convP(c.muscId).toFixed(1)} ${u}.`;
-            why = "Muscle burns calories. Building fiber actively speeds up your metabolism.";
-        } else if(metricId === 'water') {
+            
+            desc = `<b>What it is:</b> The dense, active tissue attached to your bones that drives all movement and strength.<br><br><b>Your Status:</b> You currently have <b>${convP(c.muscAct).toFixed(1)} ${u}</b> of active muscle. Your required baseline is <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
+            why = c.muscAct < c.muscId ? `Muscle is the 'engine' that burns calories. Low muscle mass drastically slows your metabolism and increases the risk of weight rebound. We must focus on building muscle fiber.` : `<b>Hypertrophy Achieved/Maintained:</b> Your muscle mass acts as a powerful metabolic furnace. It actively burns calories even at rest and absorbs blood sugar efficiently, keeping you strong and lean.`;
+        } 
+        else if(metricId === 'water') {
             title = "BODY WATER";
-            desc = `Hydration: ${c.aguaAct.toFixed(1)}%. Optimal range: ${c.aguaId}%.`;
-            why = "Proper hydration is critical for cellular function and optimal fat oxidation.";
-        } else if(metricId === 'bmi') {
-            title = "BMI";
-            desc = `Current: ${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}. Target: ${c.imcId.toFixed(1)}.`;
-            why = "A standardized tool to categorize risk related to weight relative to height.";
-        } else if(metricId === 'visceral') {
+            
+            desc = `<b>What it is:</b> The total percentage of fluids in your body, crucial for cellular survival.<br><br><b>Your Status:</b> Your hydration level is <b>${c.aguaAct.toFixed(1)}%</b>. The optimal clinical range is generally around <b>${c.aguaId}%</b>.`;
+            why = c.aguaAct < (c.aguaId - 2) ? `Dehydration thickens your blood and slows down cell function. This means oxygen can't reach your tissues efficiently, which completely stalls fat oxidation. Drink more water.` : `Proper hydration ensures your body can flush out the toxins released from burning fat. It also keeps your skin, organs, and joints lubricated and healthy.`;
+        } 
+        else if(metricId === 'bmi') {
+            title = "BODY MASS INDEX (BMI)";
+            
+            desc = `<b>What it is:</b> A universal medical screening standard comparing your total weight to your height squared.<br><br><b>Your Status:</b> Your current BMI is <b>${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}</b>. Your clinical target is <b>${c.imcId.toFixed(1)}</b>.`;
+            why = (c.imcAct - c.imcId) > 2 ? `A high BMI indicates excessive mechanical load on your skeletal structure and correlates heavily with hypertension and sleep apnea. Lowering it directly relieves pressure on your heart.` : `Your BMI is in a healthy, balanced range. Your skeletal frame is supporting an appropriate amount of weight, heavily protecting your joints and cardiovascular system.`;
+        } 
+        else if(metricId === 'visceral') {
             title = "VISCERAL FAT";
-            desc = `Level: ${isNaN(c.viscAct) ? '--' : c.viscAct}. Healthy limit: Level 9.`;
-            why = "High visceral fat leads to metabolic syndrome and insulin resistance.";
-        } else if(metricId === 'age') {
+            
+            desc = `<b>What it is:</b> The highly dangerous fat stored deep inside your abdominal cavity, wrapping around vital organs like the liver and pancreas.<br><br><b>Your Status:</b> Your current level is <b>${isNaN(c.viscAct) ? '--' : c.viscAct}</b>. The safe medical limit is Level <b>9</b> or below.`;
+            why = c.viscAct > 9 ? `<b>Critical Risk:</b> High visceral fat physically chokes organ function and is the direct leading cause of Type 2 Diabetes and fatty liver disease. Reducing this is our top medical priority.` : `<b>Optimal:</b> Your internal organs are free from dangerous fat wrapping. This allows your liver and pancreas to function at peak metabolic capacity without toxic interference.`;
+        } 
+        else if(metricId === 'age') {
             title = "METABOLIC AGE";
-            desc = `Chronological: ${c.edadMId} yrs. Biological performance: ${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs.`;
-            why = "Higher metabolic age means your cellular structure is wearing down faster.";
-        } else if(metricId === 'bmr') {
+            
+            desc = `<b>What it is:</b> A biometrics calculation of how your body performs internally compared to chronological averages.<br><br><b>Your Status:</b> Your chronological age is <b>${c.edadMId} yrs</b>, but biologically your body performs like someone who is <b>${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs</b> old.`;
+            why = c.edadMAct > c.edadMId ? `Your body is aging faster than the calendar due to oxidative stress and poor composition. Reaching your fat and muscle targets will literally reverse your cellular aging.` : `<b>Rejuvenated:</b> Your cellular health and metabolism are performing younger than your actual age. This is a massive indicator of excellent vitality and longevity.`;
+        } 
+        else if(metricId === 'bmr') {
             title = "BASAL METABOLIC RATE (BMR)";
-            desc = `Resting burn: ${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal. Target: ${Math.round(c.bmrId)} kcal/day.`;
-            why = "Higher BMR means your body incinerates more fat effortlessly.";
+            
+            desc = `<b>What it is:</b> The exact minimum number of calories your body burns every 24 hours just to stay alive at complete rest.<br><br><b>Your Status:</b> You naturally burn <b>${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal</b> at rest. Reaching your ideal composition will adjust this to <b>${Math.round(c.bmrId)} kcal/day</b>.`;
+            why = c.bmrAct < c.bmrId ? `Your metabolism is running slow, meaning your body easily stores excess food as fat. By building muscle tissue, we will increase this rate so you burn fat effortlessly.` : `Your metabolism is highly active and efficient. Your body operates as a capable engine that oxidizes energy quickly, making it much harder to gain unwanted fat.`;
         }
-        document.getElementById('infoTitle').innerText = title;
-        document.getElementById('infoDesc').innerText = desc;
-        document.getElementById('infoWhy').innerText = why;
+
+        document.getElementById('infoTitle').innerHTML = title;
+        document.getElementById('infoDesc').innerHTML = desc;
+        document.getElementById('infoWhy').innerHTML = why;
         document.getElementById('infoModalPanel').style.display = 'block';
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
 
+    // FETCH Y MATEMÁTICAS INICIALES
     async function fetchData() {
         try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); }
     }
@@ -421,7 +443,6 @@
             tr.onclick = () => selectPatient(p);
             let sexEn = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m') ? 'M' : 'F';
             
-            // LÓGICA REPARADA PARA LA PANTALLA PRINCIPAL
             let iniPeso = parseFloat(p.peso || 0);
             let actPeso = iniPeso;
             if (p.avances && p.avances.length > 0) {
@@ -599,7 +620,7 @@
             document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
-        initChart(pOrig, p, difPesoGoal, semanasParaMeta);
+        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
     }
 
     function initChart(pO, pT, difPesoKG, semanasRestantes) {
@@ -619,13 +640,13 @@
             let puntosProyeccion = 4;
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                labels.push('S' + Math.round(proySesion)); 
+                l.push('S' + Math.round(proySesion)); 
                 rd.push(null);
                 id.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
         
-        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5 }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')' } } } } });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual History', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } } });
     }
 
     async function saveNewClient() {
