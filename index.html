@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.13</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.14</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.13 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.14 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -212,14 +212,12 @@
     </div>
 
 <script>
-    // URL DE CONEXIÓN CON GOOGLE SHEETS
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
     let currentCalc = {}; 
 
-    // --- FUNCIONES DE HISTORIAL ---
     function openHistory() {
         if (!currentPatient) return;
         document.getElementById('histPatientName').innerText = currentPatient.nombre || 'Patient';
@@ -298,7 +296,6 @@
 
     function closeHistory() { document.getElementById('historyModalPanel').style.display = 'none'; }
 
-    // --- FUNCIÓN DE CAPTURA DE PANTALLA ---
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
@@ -331,7 +328,6 @@
         });
     }
 
-    // --- NUEVO DICCIONARIO CLÍNICO DINÁMICO ---
     function showInfo(metricId) {
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
@@ -402,7 +398,6 @@
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
 
-    // FETCH Y MATEMÁTICAS INICIALES
     async function fetchData() {
         try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); }
     }
@@ -528,7 +523,6 @@
 
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56, aguaAct: actAgua, aguaId: metas.agua_perc, imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9, edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra) };
 
-        // ACTUALIZACIÓN DEL DOM - DÍA 1
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
@@ -539,7 +533,6 @@
         document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
         document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
 
-        // ACTUALIZACIÓN DEL DOM - CURRENT, PROGRESS, GOAL, STATUS
         let difPesoGoal = actPeso - metas.peso;
         document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
@@ -605,8 +598,8 @@
         document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
         document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
 
-        // LÓGICA REJUVENATION BADGE CORREGIDA
-        let ageDiff = currentCalc.edadMId - currentCalc.edadMAct;
+        // LÓGICA REJUVENATION BADGE RESTAURADA AL DÍA 1
+        let ageDiff = iniEdadM - actEdadM;
         document.getElementById('rejuvenationBadge').style.display = ageDiff > 0 ? 'block' : 'none';
         if(ageDiff > 0) document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`;
 
@@ -620,61 +613,33 @@
             document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
-        
-        initChart(pOrig, p, actPeso - metas.peso, semanasParaMeta);
+        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
     }
 
     function initChart(pO, pT, difPesoKG, semanasRestantes) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        
-        let registros = [{fecha: new Date(pO.fechaInicio), pesoKG: parseFloat(pO.peso)}];
-        if(pO.avances) pO.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
-        
-        if(pT.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pT.peso)});
-        
-        registros.sort((a,b) => a.fecha - b.fecha);
-        let labels = [], realData = [], idealData = []; 
-        registros.forEach((reg, i) => { 
-            let sNum = i + 1;
-            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
-            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
-            realData.push(convP(reg.pesoKG)); 
-            idealData.push(null); 
-        });
+        let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
+        if(pO.avances) pO.avances.forEach(a => r.push({fecha: new Date(a.fecha), p: parseFloat(a.peso)}));
+        if(pT.isTempScan) r.push({fecha: new Date(), p: parseFloat(pT.peso)});
+        r.sort((a,b) => a.fecha - b.fecha);
+        let l = [], rd = [], id = [];
+        r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
         
         if (difPesoKG > 0) {
-            let ultimoPesoKG = registros[registros.length-1].pesoKG;
-            let sesionesActuales = registros.length;
-            idealData[idealData.length-1] = convP(ultimoPesoKG); 
+            let ultimoPesoKG = r[r.length-1].p;
+            let sesionesActuales = r.length;
+            id[id.length-1] = convP(ultimoPesoKG); 
             let puntosProyeccion = 4;
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
-                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
-                realData.push(null);
-                idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
+                l.push('S' + Math.round(proySesion)); 
+                rd.push(null);
+                id.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
         
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: labels, 
-                datasets: [
-                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
-                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
-                ] 
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { display: true, position: 'bottom' } }, 
-                scales: { 
-                    y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, 
-                    x: { ticks: { font: { size: 9 } } } 
-                } 
-            }
-        });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual History', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } } });
     }
 
     async function saveNewClient() {
