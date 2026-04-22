@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.15</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.16</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.15 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.16 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -220,7 +220,7 @@
     </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
@@ -231,44 +231,28 @@
         document.getElementById('histPatientName').innerText = currentPatient.nombre || 'Patient';
         let tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
-        
         let pOrig = globalData.find(c => c.id === currentPatient.id) || currentPatient;
         let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
         let edad = parseFloat(pOrig.edad || 0);
-
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
         let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
-        
-        let html = `
-            <tr class="bg-emerald-50 border-b-2 border-emerald-100">
-                <td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td>
-                <td class="text-center py-4 font-black text-emerald-600">${convP(metas.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
-                <td class="text-center py-4 font-black text-emerald-600">${metas.grasa_perc.toFixed(1)}%</td>
-                <td class="text-center py-4 font-black text-emerald-600">${convP(metas.magra * 0.56).toFixed(1)} <span class="text-[9px]">${lblU}</span></td>
-                <td class="text-center py-4 font-black text-emerald-600">≤ ${edad} y</td>
-            </tr>
-        `;
-
+        let html = `<tr class="bg-emerald-50 border-b-2 border-emerald-100"><td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">${metas.grasa_perc.toFixed(1)}%</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.magra * 0.56).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">≤ ${edad} y</td></tr>`;
         let log = [];
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         log.push({ s: "S1 (Day 1)", f: pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--', p: iniPeso, g: iniGrasa, m: iniFfm * 0.56, e: iniEdadM });
-
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sorted = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             sorted.forEach((av, i) => {
-                let aP = parseFloat(av.peso || 0);
-                let aG = parseFloat(av.grasa || 0);
+                let aP = parseFloat(av.peso || 0), aG = parseFloat(av.grasa || 0);
                 let aM = (aP * (1 - (aG/100))) * 0.56;
                 let aE = (av.predicta_data && av.predicta_data.edad_metabolica) ? av.predicta_data.edad_metabolica : Math.max(18, Math.round(edad + (aG - (isMale?15:22)) * 0.5));
                 log.push({ s: `S${i + 2}`, f: av.fecha ? av.fecha.substring(0, 10) : '--', p: aP, g: aG, m: aM, e: aE });
             });
         }
-
         log.forEach((curr, i) => {
-            let prev = i > 0 ? log[i-1] : null;
-            let pVar = "";
+            let prev = i > 0 ? log[i-1] : null, pVar = "";
             if (prev) {
                 let diff = curr.p - prev.p;
                 if (Math.abs(diff) > 0.1) {
@@ -276,28 +260,10 @@
                     pVar = `<span class="${color} text-[10px] block font-black">${diff > 0 ? '+' : ''}${convP(diff).toFixed(1)}</span>`;
                 }
             }
-            let gInd = "";
-            if (prev) {
-                if (curr.g < prev.g) gInd = `<span class="text-emerald-500 ml-1">▼</span>`;
-                else if (curr.g > prev.g) gInd = `<span class="text-orange-500 ml-1">▲</span>`;
-            }
-            let mInd = "";
-            if (prev) {
-                if (curr.m > prev.m) mInd = `<span class="text-indigo-500 ml-1">▲</span>`;
-                else if (curr.m < prev.m) mInd = `<span class="text-orange-500 ml-1">▼</span>`;
-            }
-
-            html += `
-                <tr class="${i === 0 ? 'bg-slate-50' : 'bg-white'} hover:bg-blue-50 transition">
-                    <td class="py-3 px-4"><span class="font-bold text-slate-800">${curr.s}</span><br><span class="text-[9px] text-slate-400">${curr.f}</span></td>
-                    <td class="text-center py-3 font-black text-blue-600">${convP(curr.p).toFixed(1)} ${pVar}</td>
-                    <td class="text-center py-3 font-bold text-slate-700">${curr.g.toFixed(1)}% ${gInd}</td>
-                    <td class="text-center py-3 font-bold text-indigo-900">${convP(curr.m).toFixed(1)} ${mInd}</td>
-                    <td class="text-center py-3 font-bold ${curr.e <= edad ? 'text-emerald-600' : 'text-orange-600'}">${curr.e} y</td>
-                </tr>
-            `;
+            let gInd = prev ? (curr.g < prev.g ? `<span class="text-emerald-500 ml-1">▼</span>` : (curr.g > prev.g ? `<span class="text-orange-500 ml-1">▲</span>` : "")) : "";
+            let mInd = prev ? (curr.m > prev.m ? `<span class="text-indigo-500 ml-1">▲</span>` : (curr.m < prev.m ? `<span class="text-orange-500 ml-1">▼</span>` : "")) : "";
+            html += `<tr class="${i === 0 ? 'bg-slate-50' : 'bg-white'} hover:bg-blue-50 transition"><td class="py-3 px-4"><span class="font-bold text-slate-800">${curr.s}</span><br><span class="text-[9px] text-slate-400">${curr.f}</span></td><td class="text-center py-3 font-black text-blue-600">${convP(curr.p).toFixed(1)} ${pVar}</td><td class="text-center py-3 font-bold text-slate-700">${curr.g.toFixed(1)}% ${gInd}</td><td class="text-center py-3 font-bold text-indigo-900">${convP(curr.m).toFixed(1)} ${mInd}</td><td class="text-center py-3 font-bold ${curr.e <= edad ? 'text-emerald-600' : 'text-orange-600'}">${curr.e} y</td></tr>`;
         });
-        
         tbody.innerHTML = html;
         document.getElementById('historyModalPanel').style.display = 'block';
     }
@@ -306,116 +272,84 @@
 
     function descargarImagen() {
         if(!currentPatient) return;
-        let btn = document.getElementById('btnSaveImage');
-        let header = document.getElementById('headerBotones');
-        let panelBt = document.getElementById('panelBluetooth');
-        let originalText = btn.innerText;
-        btn.innerText = "⏳ PROCESSING...";
-        header.style.display = 'none';
-        panelBt.style.display = 'none';
-
+        let btn = document.getElementById('btnSaveImage'), header = document.getElementById('headerBotones'), panelBt = document.getElementById('panelBluetooth'), originalText = btn.innerText;
+        btn.innerText = "⏳ PROCESSING..."; header.style.display = 'none'; panelBt.style.display = 'none';
         html2canvas(document.getElementById('captureArea'), { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
-            header.style.display = 'flex';
-            panelBt.style.display = 'flex';
-            btn.innerText = originalText;
-            let imgData = canvas.toDataURL("image/png");
-            let overlay = document.createElement('div');
+            header.style.display = 'flex'; panelBt.style.display = 'flex'; btn.innerText = originalText;
+            let imgData = canvas.toDataURL("image/png"), overlay = document.createElement('div');
             overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
             overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
             overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
-            let instruction = document.createElement('p');
-            instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE";
-            instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
-            let img = document.createElement('img');
-            img.src = imgData; img.style.maxHeight = '80vh'; img.style.maxWidth = '95vw'; img.style.borderRadius = '15px'; img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
-            let closeBtn = document.createElement('button');
-            closeBtn.innerText = "✕ CLOSE PREVIEW"; closeBtn.className = "text-gray-400 font-bold mt-6 hover:text-white transition";
+            let instruction = document.createElement('p'); instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE"; instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
+            let img = document.createElement('img'); img.src = imgData; img.style.maxHeight = '80vh'; img.style.maxWidth = '95vw'; img.style.borderRadius = '15px'; img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
+            let closeBtn = document.createElement('button'); closeBtn.innerText = "✕ CLOSE PREVIEW"; closeBtn.className = "text-gray-400 font-bold mt-6 hover:text-white transition";
             closeBtn.onclick = () => document.body.removeChild(overlay);
-            overlay.appendChild(instruction); overlay.appendChild(img); overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
+            overlay.appendChild(instruction); overlay.appendChild(img); overlay.appendChild(closeBtn); document.body.appendChild(overlay);
         });
     }
 
     function showInfo(metricId) {
-        let title = "", desc = "", why = "";
-        let u = lblU.toUpperCase(); 
-        let c = currentCalc;
-        
+        let title = "", desc = "", why = "", u = lblU.toUpperCase(), c = currentCalc;
         if(metricId === 'weight') {
-            title = "TOTAL WEIGHT";
-            let diff = c.pesoAct - c.pesoId;
-            let statusText = diff > 0 ? `Currently, you have a surplus of <b>${convP(diff).toFixed(1)} ${u}</b> to lose.` : `You are at or below your target weight.`;
-            desc = `<b>What it is:</b> The total sum of your body mass (fat, muscle, water, and bone).<br><br><b>Your Status:</b> Based on the exact lean mass you had on Day 1, your permanent clinical target is fixed at <b>${convP(c.pesoId).toFixed(1)} ${u}</b>. ${statusText}`;
-            why = diff > 0 ? `Carrying excess weight forces your heart to work harder and adds destructive mechanical stress to your joints (like your knees and lower back). Reaching your target reduces internal inflammation and cardiovascular risk.` : `Maintaining this optimal weight reduces mechanical wear on your joints and keeps your cardiovascular system running efficiently. Excellent work.`;
+            title = "TOTAL WEIGHT"; let diff = c.pesoAct - c.pesoId;
+            desc = `<b>Your Status:</b> Target fixed at <b>${convP(c.pesoId).toFixed(1)} ${u}</b>. ${diff > 0 ? `Surplus of <b>${convP(diff).toFixed(1)} ${u}</b>.` : `At or below target.`}`;
+            why = diff > 0 ? `Reduces internal inflammation and cardiovascular risk.` : `Maintains efficiency and joint health.`;
         } else if(metricId === 'fat') {
             title = "BODY FAT %";
-            let diffFat = c.grasaAct - c.grasaId;
-            desc = `<b>What it is:</b> The percentage of your total weight that is strictly fat tissue.<br><br><b>Your Status:</b> You are currently at <b>${c.grasaAct.toFixed(1)}%</b>. For your specific age and gender, the clinical healthy target is <b>${c.grasaId.toFixed(1)}%</b>.`;
-            why = diffFat > 0 ? `Excess body fat acts as an active organ, constantly releasing inflammatory hormones into your bloodstream. Oxidizing this fat is our absolute priority to reverse insulin resistance and protect your heart.` : `Your body fat is in the optimal range. This promotes healthy hormone production, stable energy levels, and provides strong protection against metabolic diseases.`;
+            desc = `<b>Your Status:</b> Currently <b>${c.grasaAct.toFixed(1)}%</b>. Target is <b>${c.grasaId.toFixed(1)}%</b>.`;
+            why = "Primary target for reversing insulin resistance and protecting the heart.";
         } else if(metricId === 'lean') {
             title = "LEAN MASS (BASE)";
-            desc = `<b>What it is:</b> Everything in your body that isn't fat (your bones, organs, blood, and muscle).<br><br><b>Your Status:</b> You started with <b>${convP(c.magraBase).toFixed(1)} ${u}</b> of lean mass. Our goal is to protect it. You currently have <b>${convP(c.magraAct).toFixed(1)} ${u}</b>.`;
-            why = c.magraAct < c.magraBase ? `<b>Warning:</b> You are losing vital tissue, not just fat. This can weaken your immune system and bone density. We need to adjust your nutrition to protect your base.` : `<b>Protected:</b> You are successfully retaining your vital physical structure while cutting fat. This is the gold standard of healthy, sustainable weight loss.`;
+            desc = `<b>Your Status:</b> Initial <b>${convP(c.magraBase).toFixed(1)} ${u}</b>. Current <b>${convP(c.magraAct).toFixed(1)} ${u}</b>.`;
+            why = "Protection of vital structure while cutting fat.";
         } else if(metricId === 'muscle') {
             title = "SKELETAL MUSCLE";
-            desc = `<b>What it is:</b> The dense, active tissue attached to your bones that drives all movement and strength.<br><br><b>Your Status:</b> You currently have <b>${convP(c.muscAct).toFixed(1)} ${u}</b> of active muscle. Your required baseline is <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
-            why = c.muscAct < c.muscId ? `Muscle is the 'engine' that burns calories. Low muscle mass drastically slows your metabolism and increases the risk of weight rebound. We must focus on building muscle fiber.` : `<b>Hypertrophy Achieved/Maintained:</b> Your muscle mass acts as a powerful metabolic furnace. It actively burns calories even at rest and absorbs blood sugar efficiently, keeping you strong and lean.`;
+            desc = `<b>Your Status:</b> <b>${convP(c.muscAct).toFixed(1)} ${u}</b>. Required <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
+            why = "Active metabolic furnace that burns calories even at rest.";
         } else if(metricId === 'water') {
             title = "BODY WATER";
-            desc = `<b>What it is:</b> The total percentage of fluids in your body, crucial for cellular survival.<br><br><b>Your Status:</b> Your hydration level is <b>${c.aguaAct.toFixed(1)}%</b>. The optimal clinical range is generally around <b>${c.aguaId}%</b>.`;
-            why = c.aguaAct < (c.aguaId - 2) ? `Dehydration thickens your blood and slows down cell function. This means oxygen can't reach your tissues efficiently, which completely stalls fat oxidation. Drink more water.` : `Proper hydration ensures your body can flush out the toxins released from burning fat. It also keeps your skin, organs, and joints lubricated and healthy.`;
+            desc = `<b>Your Status:</b> <b>${c.aguaAct.toFixed(1)}%</b>. Target <b>${c.aguaId}%</b>.`;
+            why = "Crucial for fat oxidation and metabolic flow.";
         } else if(metricId === 'bmi') {
             title = "BODY MASS INDEX (BMI)";
-            desc = `<b>What it is:</b> A universal medical screening standard comparing your total weight to your height squared.<br><br><b>Your Status:</b> Your current BMI is <b>${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}</b>. Your clinical target is <b>${c.imcId.toFixed(1)}</b>.`;
-            why = (c.imcAct - c.imcId) > 2 ? `A high BMI indicates excessive mechanical load on your skeletal structure and correlates heavily with hypertension and sleep apnea. Lowering it directly relieves pressure on your heart.` : `Your BMI is in a healthy, balanced range. Your skeletal frame is supporting an appropriate amount of weight, heavily protecting your joints and cardiovascular system.`;
+            desc = `<b>Your Status:</b> <b>${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}</b>. Target <b>${c.imcId.toFixed(1)}</b>.`;
+            why = "Universal screening tool for joint and heart pressure.";
         } else if(metricId === 'visceral') {
             title = "VISCERAL FAT";
-            desc = `<b>What it is:</b> The highly dangerous fat stored deep inside your abdominal cavity, wrapping around vital organs like the liver and pancreas.<br><br><b>Your Status:</b> Your current level is <b>${isNaN(c.viscAct) ? '--' : c.viscAct}</b>. The safe medical limit is Level <b>9</b> or below.`;
-            why = c.viscAct > 9 ? `<b>Critical Risk:</b> High visceral fat physically chokes organ function and is the direct leading cause of Type 2 Diabetes and fatty liver disease. Reducing this is our top medical priority.` : `<b>Optimal:</b> Your internal organs are free from dangerous fat wrapping. This allows your liver and pancreas to function at peak metabolic capacity without toxic interference.`;
+            desc = `<b>Your Status:</b> <b>${isNaN(c.viscAct) ? '--' : c.viscAct}</b>. Safe limit: <b>9</b>.`;
+            why = "Dangerous fat surrounding organs. Leading cause of Type 2 Diabetes.";
         } else if(metricId === 'age') {
             title = "METABOLIC AGE";
-            desc = `<b>What it is:</b> A biometrics calculation of how your body performs internally compared to chronological averages.<br><br><b>Your Status:</b> Your chronological age is <b>${c.edadMId} yrs</b>, but biologically your body performs like someone who is <b>${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs</b> old.`;
-            why = c.edadMAct > c.edadMId ? `Your body is aging faster than the calendar due to oxidative stress and poor composition. Reaching your fat and muscle targets will literally reverse your cellular aging.` : `<b>Rejuvenated:</b> Your cellular health and metabolism are performing younger than your actual age. This is a massive indicator of excellent vitality and longevity.`;
+            desc = `<b>Your Status:</b> Chronological <b>${c.edadMId} yrs</b>. Biological <b>${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs</b>.`;
+            why = "Excellent indicator of cellular vitality and longevity.";
         } else if(metricId === 'bmr') {
             title = "BASAL METABOLIC RATE (BMR)";
-            desc = `<b>What it is:</b> The exact minimum number of calories your body burns every 24 hours just to stay alive at complete rest.<br><br><b>Your Status:</b> You naturally burn <b>${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal</b> at rest. Reaching your ideal composition will adjust this to <b>${Math.round(c.bmrId)} kcal/day</b>.`;
-            why = c.bmrAct < c.bmrId ? `Your metabolism is running slow, meaning your body easily stores excess food as fat. By building muscle tissue, we will increase this rate so you burn fat effortlessly.` : `Your metabolism is highly active and efficient. Your body operates as a capable engine that oxidizes energy quickly, making it much harder to gain unwanted fat.`;
+            desc = `<b>Your Status:</b> <b>${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal</b>. Target <b>${Math.round(c.bmrId)} kcal</b>.`;
+            why = "The engine speed of your metabolism.";
         }
-
-        document.getElementById('infoTitle').innerHTML = title;
-        document.getElementById('infoDesc').innerHTML = desc;
-        document.getElementById('infoWhy').innerHTML = why;
+        document.getElementById('infoTitle').innerHTML = title; document.getElementById('infoDesc').innerHTML = desc; document.getElementById('infoWhy').innerHTML = why;
         document.getElementById('infoModalPanel').style.display = 'block';
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
 
-    async function fetchData() {
-        try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); }
-    }
-
+    async function fetchData() { try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); } }
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
-
     function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
-        let sexoSeguro = sexo ? String(sexo).toLowerCase() : 'm';
-        let isMale = sexoSeguro.startsWith('m');
-        let baseGrasa = isMale ? 12 : 20;
-        let gIdeal = baseGrasa + (Math.max(0, edad - 20) * 0.15);
+        let isMale = (sexo ? String(sexo).toLowerCase() : 'm').startsWith('m');
+        let gIdeal = (isMale ? 12 : 20) + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-        let pIdeal = masa_magra_actual / (1 - (gIdeal / 100)); 
-        return { peso: pIdeal, grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
+        return { peso: masa_magra_actual / (1 - (gIdeal / 100)), grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
-
     function renderDiff(act, ini, isLowerBetter, suffix) {
         if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
-        let d = act - ini; if(Math.abs(d) < 0.1) return `<span class="text-gray-400 font-bold">0.0 <span class="text-[8px]">${suffix}</span></span>`;
+        let d = act - ini; if(Math.abs(d) < 0.1) return `<span class="text-gray-400 font-bold">0.0</span>`;
         let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
         return `<span class="font-black ${c}">${d > 0 ? '+' : ''}${d.toFixed(1)} <span class="text-[8px]">${suffix}</span></span>`;
     }
-
     function renderDiffInt(act, ini, isLowerBetter, suffix) {
         if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
-        let d = Math.round(act - ini); if(d === 0) return `<span class="text-gray-400 font-bold">0 <span class="text-[8px]">${suffix}</span></span>`;
+        let d = Math.round(act - ini); if(d === 0) return `<span class="text-gray-400 font-bold">0</span>`;
         let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
         return `<span class="font-black ${c}">${d > 0 ? '+' : ''}${d} <span class="text-[8px]">${suffix}</span></span>`;
     }
@@ -424,26 +358,13 @@
         lblU = unitMode === 'KG' ? 'kg' : 'lb';
         const tbody = document.getElementById('clientTableBody'); tbody.innerHTML = '';
         data.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
-            tr.onclick = () => selectPatient(p);
-            let sexEn = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m') ? 'M' : 'F';
-            
-            let iniPeso = parseFloat(p.peso || 0);
-            let actPeso = iniPeso;
+            const tr = document.createElement('tr'); tr.className = "hover:bg-blue-50 cursor-pointer border-b italic"; tr.onclick = () => selectPatient(p);
+            let iniPeso = parseFloat(p.peso || 0), actPeso = iniPeso;
             if (p.avances && p.avances.length > 0) {
                 let sorted = [...p.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-                let last = sorted[sorted.length - 1];
-                actPeso = parseFloat(last.peso || actPeso);
+                actPeso = parseFloat(sorted[sorted.length - 1].peso || actPeso);
             }
-
-            tr.innerHTML = `
-                <td class="px-6 py-3"><span class="id-badge">${p.id}</span></td>
-                <td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td>
-                <td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${sexEn} | ${p.edad || 0} YRS | ${convA(p.altura)}</td>
-                <td class="px-6 py-3 text-center font-bold text-slate-500 text-sm">${convP(iniPeso).toFixed(1)} ${lblU}</td>
-                <td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(actPeso).toFixed(1)} ${lblU}</td>
-                <td class="px-6 py-3 text-right text-blue-200">➔</td>`;
+            tr.innerHTML = `<td class="px-6 py-3"><span class="id-badge">${p.id}</span></td><td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td><td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${(p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m')?'M':'F'} | ${p.edad || 0} YRS</td><td class="px-6 py-3 text-center font-bold text-slate-500 text-sm">${convP(iniPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(actPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -468,59 +389,28 @@
         document.getElementById('modalID').innerText = `ID: ${pOrig.id}`;
         document.getElementById('modalNombre').innerText = pOrig.nombre || 'Patient';
         document.getElementById('modalInfo').innerText = `${isMale?'M':'F'} | ${pOrig.edad || 0} YRS | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
-        
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
-        
-        let iniPeso = parseFloat(pOrig.peso || 0);
-        let iniGrasa = parseFloat(pOrig.grasa || 0);
+        let iniPeso = parseFloat(pOrig.peso || 0), iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
-        let iniMusc = iniFfm * 0.56;
-        let iniAgua = parseFloat(pOrig.agua_corporal_perc || ((iniFfm * 0.732 / iniPeso) * 100));
-        let iniImc = iniPeso / Math.pow(altura/100, 2);
-        let iniVisc = Math.max(1, Math.round(pOrig.grasa_visceral || ((iniGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
-        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
-        let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
-
         let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
-        
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
             let last = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).pop();
-            actPeso = parseFloat(last.peso || actPeso);
-            actGrasa = parseFloat(last.grasa || actGrasa);
-            if(last.predicta_data) {
-                actViscVal = last.predicta_data.visceral || actViscVal;
-                actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal;
-                actBmrVal = last.predicta_data.bmr || actBmrVal;
-                actAguaVal = last.predicta_data.agua_perc || actAguaVal;
-            }
+            actPeso = parseFloat(last.peso || actPeso); actGrasa = parseFloat(last.grasa || actGrasa);
+            if(last.predicta_data) { actViscVal = last.predicta_data.visceral || actViscVal; actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal; actBmrVal = last.predicta_data.bmr || actBmrVal; actAguaVal = last.predicta_data.agua_perc || actAguaVal; }
         }
-        
-        if (p.isTempScan) {
-            actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa);
-            actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc;
-        }
-
-        let actFfm = actPeso * (1 - (actGrasa/100));
-        let actMusc = actFfm * 0.56;
-        let actAgua = parseFloat(actAguaVal || ((actFfm * 0.732 / actPeso) * 100));
-        let actImc = actPeso / Math.pow(altura/100, 2);
-        let actVisc = Math.max(1, Math.round(actViscVal || ((actGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
-        let actEdadM = Math.max(18, Math.round(actEdadMVal || (edad + (actGrasa - (isMale?15:22)) * 0.5)));
-        let actBmr = parseFloat(actBmrVal || (370 + (21.6 * actFfm)));
-
-        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
-
-        currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56, aguaAct: actAgua, aguaId: metas.agua_perc, imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9, edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra) };
+        if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
+        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+        currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: actAguaVal || (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: actViscVal || Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: actEdadMVal || Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: actBmrVal || 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
 
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
-        document.getElementById('tMuscIni').innerText = convP(iniMusc).toFixed(1);
-        document.getElementById('tAguaIni').innerText = iniAgua.toFixed(1);
-        document.getElementById('tImcIni').innerText = isNaN(iniImc) ? '--' : iniImc.toFixed(1);
-        document.getElementById('tViscIni').innerText = isNaN(iniVisc) ? '--' : iniVisc;
-        document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
-        document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
+        document.getElementById('tMuscIni').innerText = convP(iniFfm*0.56).toFixed(1);
+        document.getElementById('tAguaIni').innerText = iniAguaVal ? parseFloat(iniAguaVal).toFixed(1) : '--';
+        document.getElementById('tImcIni').innerText = iniPeso ? (iniPeso/Math.pow(altura/100,2)).toFixed(1) : '--';
+        document.getElementById('tViscIni').innerText = pOrig.grasa_visceral || '--';
+        document.getElementById('tEdadMIni').innerText = pOrig.edad_metabolica || '--';
+        document.getElementById('tBmrIni').innerText = pOrig.bmr_kcal || '--';
 
         let difPesoGoal = actPeso - metas.peso;
         document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
@@ -544,73 +434,36 @@
         document.getElementById('tMagraEst').innerText = actFfm >= metas.magra ? 'PROTECTED' : 'AT RISK';
         document.getElementById('tMagraEst').className = actFfm >= metas.magra ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
 
-        let difMuscGoal = actMusc - (metas.magra * 0.56);
-        document.getElementById('tMuscAct').innerText = convP(actMusc).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscAct').className = difMuscGoal < 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-600';
-        document.getElementById('tMuscPrg').innerHTML = renderDiff(convP(actMusc), convP(iniMusc), false, lblU);
+        let muscAct = actFfm * 0.56, muscIni = iniFfm * 0.56;
+        document.getElementById('tMuscAct').innerText = convP(muscAct).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMuscAct').className = (muscAct < (metas.magra * 0.56)) ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-600';
+        document.getElementById('tMuscPrg').innerHTML = renderDiff(convP(muscAct), convP(muscIni), false, lblU);
         document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscEst').innerText = difMuscGoal >= 0 ? 'HYPERTROPHY' : 'NEEDS FIBER';
-        document.getElementById('tMuscEst').className = difMuscGoal >= 0 ? 'text-right text-[9px] uppercase font-bold text-indigo-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+        document.getElementById('tMuscEst').innerText = (muscAct >= (metas.magra * 0.56)) ? 'HYPERTROPHY' : 'NEEDS FIBER';
+        document.getElementById('tMuscEst').className = (muscAct >= (metas.magra * 0.56)) ? 'text-right text-[9px] uppercase font-bold text-indigo-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
 
-        document.getElementById('tAguaAct').innerText = actAgua.toFixed(1) + ' %';
-        document.getElementById('tAguaAct').className = actAgua < (metas.agua_perc - 2) ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-500';
-        document.getElementById('tAguaPrg').innerHTML = renderDiff(actAgua, iniAgua, false, '%');
+        document.getElementById('tAguaAct').innerText = currentCalc.aguaAct.toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
-        document.getElementById('tAguaEst').innerText = actAgua >= metas.agua_perc ? 'HYDRATED' : 'DEHYDRATED';
-        document.getElementById('tAguaEst').className = actAgua >= metas.agua_perc ? 'text-right text-[9px] uppercase font-bold text-blue-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
-
-        document.getElementById('tImcAct').innerText = isNaN(actImc) ? '--' : actImc.toFixed(1);
-        document.getElementById('tImcAct').className = (actImc - metas.imc) > 2 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tImcPrg').innerHTML = renderDiff(actImc, iniImc, true, '');
+        document.getElementById('tImcAct').innerText = currentCalc.imcAct.toFixed(1);
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
-        document.getElementById('tImcEst').innerText = (actImc - metas.imc) > 2 ? 'OVERWEIGHT' : 'BALANCED';
-        document.getElementById('tImcEst').className = (actImc - metas.imc) > 2 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+        document.getElementById('tViscAct').innerText = currentCalc.viscAct;
+        document.getElementById('tEdadMAct').innerText = currentCalc.edadMAct;
+        document.getElementById('tBmrAct').innerText = Math.round(currentCalc.bmrAct);
+        document.getElementById('tBmrId').innerText = Math.round(currentCalc.bmrId);
 
-        document.getElementById('tViscAct').innerText = isNaN(actVisc) ? '--' : actVisc + ' Lvl';
-        document.getElementById('tViscAct').className = actVisc > 9 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tViscPrg').innerHTML = renderDiffInt(actVisc, iniVisc, true, 'Lvl');
-        document.getElementById('tViscId').innerText = '≤ 9 Lvl';
-        document.getElementById('tViscEst').innerText = actVisc > 9 ? 'CRITICAL' : 'OPTIMAL';
-        document.getElementById('tViscEst').className = actVisc > 9 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tEdadMAct').innerText = isNaN(actEdadM) ? '--' : actEdadM + ' yrs';
-        document.getElementById('tEdadMAct').className = actEdadM > edad ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
-        document.getElementById('tEdadMPrg').innerHTML = renderDiffInt(actEdadM, iniEdadM, true, 'yrs');
-        document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' yrs';
-        document.getElementById('tEdadMEst').innerText = actEdadM > edad ? 'OXIDATIVE' : 'REJUVENATED';
-        document.getElementById('tEdadMEst').className = actEdadM > edad ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
-        document.getElementById('tBmrAct').innerText = isNaN(actBmr) ? '--' : Math.round(actBmr) + ' kcal';
-        document.getElementById('tBmrAct').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-center font-black text-orange-500' : 'text-center font-black text-slate-800';
-        document.getElementById('tBmrPrg').innerHTML = renderDiffInt(actBmr, iniBmr, false, 'kcal');
-        document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
-        document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
-        document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
-
+        let ageDiff = parseInt(pOrig.edad_metabolica || edad) - currentCalc.edadMAct;
         let badge = document.getElementById('rejuvenationBadge');
-        // SE CORRIGE LA FÓRMULA DE REJUVENECIMIENTO AL ESTADO DE V4.13
-        let ageDiff = iniEdadM - actEdadM;
-        if (!isNaN(ageDiff) && ageDiff > 0) {
-            badge.style.display = 'block';
-            document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`;
-        } else {
-            badge.style.display = 'none';
-        }
-
-        let semanasParaMeta = Math.max(0, difPesoGoal) / (2 * 0.453592); 
-        if(semanasParaMeta <= 0) {
-            document.getElementById('progDateText').innerText = "TODAY";
-            document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
-        } else {
-            let fechaMeta = new Date(); fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
-            document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
-            document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
+        if (!isNaN(ageDiff) && ageDiff > 0) { badge.style.display = 'block'; document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`; } else { badge.style.display = 'none'; }
+        
+        let sPM = Math.max(0, difPesoGoal) / (2 * 0.453592);
+        if(sPM <= 0) { document.getElementById('progDateText').innerText = "TODAY"; document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅"; } else {
+            let fM = new Date(); fM.setDate(fM.getDate() + (sPM * 7)); document.getElementById('progDateText').innerText = fM.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase(); document.getElementById('prognosisSessions').innerText = `${Math.ceil(sPM * 2)} SESSIONS | ${Math.ceil(sPM)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
-        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
+        initChart(pOrig, p, actPeso - metas.peso, sPM);
     }
 
-    function initChart(pO, pT, difPesoKG, semanasRestantes) {
+    function initChart(pO, pT, dP, sR) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
         let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
@@ -619,40 +472,17 @@
         r.sort((a,b) => a.fecha - b.fecha);
         let l = [], rd = [], id = [];
         r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
-        
-        if (difPesoKG > 0) {
-            let ultimoPesoKG = r[r.length-1].p;
-            let sesionesActuales = r.length;
-            id[id.length-1] = convP(ultimoPesoKG); 
-            let puntosProyeccion = 4;
-            for(let i=1; i<=puntosProyeccion; i++) {
-                let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                l.push('S' + Math.round(proySesion)); 
-                rd.push(null);
-                id.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
-            }
+        if (dP > 0) {
+            let uP = r[r.length-1].p, sA = r.length; id[id.length-1] = convP(uP); 
+            for(let i=1; i<=4; i++) { let pS = sA + ((sR * 2) * (i / 4)); l.push('S' + Math.round(pS)); rd.push(null); id.push(convP(uP - (dP * (i / 4)))); }
         }
-        
-        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual History', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } } });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual History', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } }, scales: { y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')' } } } } });
     }
 
     async function saveNewClient() {
         const f = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender', 'newPlan'];
-        for(let id of f) { if(!document.getElementById(id).value) { alert("Please complete all fields (including Nutrition Plan) and read scale."); return; } }
-        
-        const c = { 
-            id: document.getElementById('newID').value || `ID-${Date.now()}`, 
-            nombre: document.getElementById('newName').value, 
-            sexo: document.getElementById('newGender').value==='Male'?'Masculino':'Femenino', 
-            edad: document.getElementById('newAge').value, 
-            altura: document.getElementById('newHeight').value, 
-            peso: document.getElementById('newWeight').value, 
-            grasa: document.getElementById('newFat').value, 
-            fechaInicio: new Date().toISOString().split('T')[0], 
-            plan_asignado: document.getElementById('newPlan').value, // ENVÍO DEL NUEVO CAMPO
-            predicta_data: datosClinicosTemporales 
-        };
-        
+        for(let id of f) { if(!document.getElementById(id).value) { alert("Please complete all fields."); return; } }
+        const c = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value==='Male'?'Masculino':'Femenino', edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], plan_asignado: document.getElementById('newPlan').value, predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusNew').innerText = "SAVING...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente: c }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
@@ -663,47 +493,23 @@
         if(!w) return;
         const a = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
         document.getElementById('btStatusSeg').innerText = "SYNCHRONIZING...";
-        try {
-            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: a }) });
-            document.getElementById('btStatusSeg').innerText = "DATA UPDATED ✅";
-            setTimeout(() => { datosClinicosTemporales = {}; closeModal(); fetchData(); }, 1200);
-        } catch(e) { document.getElementById('btStatusSeg').innerText = "❌ ERROR"; }
+        try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: a }) }); document.getElementById('btStatusSeg').innerText = "DATA UPDATED ✅"; setTimeout(() => { datosClinicosTemporales = {}; closeModal(); fetchData(); }, 1200); } catch(e) { document.getElementById('btStatusSeg').innerText = "❌ ERROR"; }
     }
 
     async function conectarBáscula(contexto) {
         let ed, alt, sex, st, wI, fI;
-        if(contexto === 'nuevo') {
-            ed = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; sex = document.getElementById('newGender').value==='Male'?'Masculino':'Femenino';
-            st = document.getElementById('btStatusNew'); wI = document.getElementById('newWeight'); fI = document.getElementById('newFat');
-        } else {
-            ed = currentPatient.edad; alt = currentPatient.altura; sex = currentPatient.sexo;
-            st = document.getElementById('btStatusSeg'); wI = document.getElementById('sessWeight'); fI = document.getElementById('sessFat');
-        }
+        if(contexto === 'nuevo') { ed = document.getElementById('newAge').value; alt = document.getElementById('newHeight').value; sex = document.getElementById('newGender').value==='Male'?'Masculino':'Femenino'; st = document.getElementById('btStatusNew'); wI = document.getElementById('newWeight'); fI = document.getElementById('newFat'); } else { ed = currentPatient.edad; alt = currentPatient.altura; sex = currentPatient.sexo; st = document.getElementById('btStatusSeg'); wI = document.getElementById('sessWeight'); fI = document.getElementById('sessFat'); }
         if(!ed || !alt) return;
         try {
             const dev = await navigator.bluetooth.requestDevice({ filters: [{ name: 'QN-Scale' }], optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] });
-            const srv = await dev.gatt.connect();
-            const svc = await srv.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
-            const cN = await svc.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
-            const cW = await svc.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
-            await cN.startNotifications();
-            let fin = false;
+            const srv = await dev.gatt.connect(); const svc = await srv.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+            const cN = await svc.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb'); const cW = await svc.getCharacteristic('0000ffe3-0000-1000-8000-00805f9b34fb');
+            await cN.startNotifications(); let fin = false;
             cN.addEventListener('characteristicvaluechanged', (e) => {
                 let d = new Uint8Array(e.target.value.buffer);
                 if (d[0] === 0x10 && d.length >= 10) {
-                    let p = ((d[3] << 8) | d[4]) / 100, oh = (d[8] << 8) | d[9];
-                    if (!fin) wI.value = p.toFixed(1);
-                    if (oh > 100 && !fin) {
-                        fin = true;
-                        datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex);
-                        fI.value = datosClinicosTemporales.grasa_porcentaje;
-                        if (contexto !== 'nuevo') {
-                            let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales };
-                            selectPatient(pT);
-                        }
-                        st.innerText = "✅ SCAN COMPLETED.";
-                        setTimeout(() => dev.gatt.disconnect(), 1500);
-                    }
+                    let p = ((d[3] << 8) | d[4]) / 100, oh = (d[8] << 8) | d[9]; if (!fin) wI.value = p.toFixed(1);
+                    if (oh > 100 && !fin) { fin = true; datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex); fI.value = datosClinicosTemporales.grasa_porcentaje; if (contexto !== 'nuevo') { let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales }; selectPatient(pT); } st.innerText = "✅ SCAN COMPLETED."; setTimeout(() => dev.gatt.disconnect(), 1500); }
                 }
             });
             setTimeout(() => cW.writeValueWithoutResponse(new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x01, 0x00, 0x19])), 1000);
@@ -711,12 +517,9 @@
     }
 
     function calcularComposicionTotal(p, oh, h, ed, sx) {
-        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh;
-        let isM = String(sx).toLowerCase().startsWith('m');
-        let ffm = (isM ? (0.39 * z) + (0.18 * p) + (0.16 * h) - (0.09 * ed) + 5.0 : (0.38 * z) + (0.15 * p) + (0.12 * h) - (0.07 * ed) + 4.5);
-        if (imc > 28) ffm += (imc - 28) * 0.15;
-        let pg = ((p - ffm) / p) * 100;
-        return { grasa_porcentaje: pg.toFixed(1), visceral: Math.max(1, Math.round((pg*0.25)+(ed*0.12)-(isM?3:6))), edad_metabolica: Math.max(18, Math.round(ed+(pg-(isM?15:22))*0.5)), bmr: Math.round(370+(21.6*ffm)), agua_perc: (ffm*0.732/p)*100 };
+        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh; let isM = String(sx).toLowerCase().startsWith('m');
+        let ffm = (isM ? (0.39 * z) + (0.18 * p) + (0.16 * h) - (0.09 * ed) + 5.0 : (0.38 * z) + (0.15 * p) + (0.12 * h) - (0.07 * ed) + 4.5); if (imc > 28) ffm += (imc - 28) * 0.15;
+        let pg = ((p - ffm) / p) * 100; return { grasa_porcentaje: pg.toFixed(1), visceral: Math.max(1, Math.round((pg*0.25)+(ed*0.12)-(isM?3:6))), edad_metabolica: Math.max(18, Math.round(ed+(pg-(isM?15:22))*0.5)), bmr: Math.round(370+(21.6*ffm)), agua_perc: (ffm*0.732/p)*100, ohms: oh };
     }
 
     function openNewClientModal() { document.getElementById('modalNuevo').style.display = 'block'; }
