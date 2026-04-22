@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PREDICTACORE - PATIENT PORTAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #e2e8f0; }
+        .titan-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; }
+        .accent-gold { color: #d4af37; }
+        .bg-gold { background: #d4af37; }
+        .input-dark { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 14px; width: 100%; color: white; outline: none; transition: border 0.3s; }
+        .input-dark:focus { border-color: #d4af37; }
+        .btn-primary { background: #d4af37; color: black; font-weight: 900; padding: 16px; border-radius: 14px; width: 100%; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-primary:active { transform: scale(0.96); }
+        .nav-tab { flex: 1; text-align: center; padding: 15px 10px; font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
+        .nav-tab.active { color: #d4af37; }
+        .diet-item { border-left: 3px solid #d4af37; padding-left: 15px; margin-bottom: 24px; }
+        .status-pill { background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 900; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="loginScreen" class="min-h-screen flex flex-col justify-center px-8 transition-opacity duration-500">
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-black italic tracking-tighter accent-gold leading-none">PREDICTA</h1>
+            <p class="text-slate-500 text-[10px] uppercase tracking-[6px] mt-3 font-bold">Patient Portal</p>
+        </div>
+        <div class="space-y-4 max-w-sm mx-auto w-full">
+            <input type="text" id="loginID" class="input-dark text-center" placeholder="PATIENT ID">
+            <input type="text" id="loginName" class="input-dark text-center" placeholder="FIRST NAME">
+            <button onclick="attemptLogin()" id="btnLogin" class="btn-primary shadow-xl shadow-gold/10">Unlock My Progress</button>
+            <p id="loginError" class="text-red-500 text-[10px] text-center uppercase font-black hidden mt-4">Invalid Access. Check ID or Name.</p>
+        </div>
+    </div>
+
+    <div id="mainDashboard" class="hidden min-h-screen pb-28">
+        <header class="p-8 pt-12 flex justify-between items-start">
+            <div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest">Welcome back,</p>
+                <h2 id="patientHello" class="text-3xl font-black uppercase italic tracking-tight">--</h2>
+                <div class="mt-2 inline-block status-pill" id="patientPlanName">PLAN: --</div>
+            </div>
+            <button onclick="location.reload()" class="bg-slate-900 p-3 rounded-full opacity-50"><p class="text-[10px] font-bold">OUT</p></button>
+        </header>
+
+        <div id="view-progress" class="px-6 space-y-5">
+            <div id="bioAgeCard" class="titan-card p-6 border-emerald-500/20 hidden">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Biological Performance</p>
+                        <h3 class="text-4xl font-black mt-1">REGAINED <span id="dashRegained" class="text-emerald-400">0</span> YRS</h3>
+                    </div>
+                    <span class="text-3xl">🛡️</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="titan-card p-5">
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Start Weight</p>
+                    <p class="text-2xl font-black mt-1"><span id="dashStartWeight">--</span> <span class="text-[10px] text-slate-500 uppercase" id="unitLbl1">LB</span></p>
+                </div>
+                <div class="titan-card p-5 border-blue-500/20">
+                    <p class="text-[9px] text-blue-400 font-black uppercase tracking-widest">Current Weight</p>
+                    <p class="text-2xl font-black mt-1 text-blue-400"><span id="dashCurrWeight">--</span> <span class="text-[10px] uppercase" id="unitLbl2">LB</span></p>
+                </div>
+            </div>
+
+            <div class="titan-card p-6 bg-gradient-to-br from-indigo-900/20 to-transparent border-indigo-500/20">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Predicta AI Insight</p>
+                </div>
+                <p id="aiRecommendation" class="text-sm leading-relaxed text-slate-300 font-medium italic">
+                    Analizando tu biometría...
+                </p>
+            </div>
+        </div>
+
+        <div id="view-nutrition" class="hidden px-8 pb-10">
+            <h3 class="text-2xl font-black uppercase italic mb-8 accent-gold tracking-tight">Nutrition Plan</h3>
+            <div id="nutritionContent" class="space-y-2">
+                </div>
+        </div>
+
+        <nav class="fixed bottom-6 inset-x-6 bg-[#0f172a]/90 backdrop-blur-xl border border-slate-800 rounded-3xl flex h-20 items-center px-4 z-50 shadow-2xl">
+            <div onclick="switchTab('progress')" id="tab-progress" class="nav-tab active">
+                <p class="text-xl mb-1">📊</p>
+                <p>Stats</p>
+            </div>
+            <div onclick="switchTab('nutrition')" id="tab-nutrition" class="nav-tab">
+                <p class="text-xl mb-1">🍏</p>
+                <p>Plan</p>
+            </div>
+        </nav>
+    </div>
+
+<script>
+    // URL DE TU ÚLTIMA IMPLEMENTACIÓN (V4.16)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec";
+
+    let patientData = null;
+    let unitMode = 'LB'; // Por defecto para pacientes en TX
+
+    async function attemptLogin() {
+        const id = document.getElementById('loginID').value.trim();
+        const name = document.getElementById('loginName').value.trim().toLowerCase();
+        const btn = document.getElementById('btnLogin');
+        const err = document.getElementById('loginError');
+
+        if(!id || !name) return;
+
+        btn.innerText = "VERIFYING...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
+            const data = await res.json();
+            
+            // Match por ID y nombre parcial
+            const match = data.find(p => String(p.id).trim() === id && String(p.nombre).toLowerCase().includes(name));
+
+            if(match) {
+                patientData = match;
+                loadDashboard();
+            } else {
+                err.classList.remove('hidden');
+                btn.innerText = "Unlock My Progress";
+                btn.disabled = false;
+            }
+        } catch(e) {
+            alert("Connection timeout. Try again.");
+            btn.innerText = "Unlock My Progress";
+            btn.disabled = false;
+        }
+    }
+
+    function loadDashboard() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainDashboard').classList.remove('hidden');
+
+        const first = patientData.nombre.split(' ')[0].toUpperCase();
+        document.getElementById('patientHello').innerText = `HOLA, ${first}`;
+        
+        let planKey = patientData.plan_asignado || "Mixto";
+        document.getElementById('patientPlanName').innerText = `PLAN: ${planKey.toUpperCase()}`;
+
+        // Obtener último peso real
+        let lastWeight = parseFloat(patientData.peso);
+        let lastEdadM = parseInt(patientData.edad_metabolica);
+
+        if(patientData.avances && patientData.avances.length > 0) {
+            const sorted = [...patientData.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+            const last = sorted[sorted.length - 1];
+            lastWeight = parseFloat(last.peso);
+            if(last.predicta_data && last.predicta_data.edad_metabolica) lastEdadM = parseInt(last.predicta_data.edad_metabolica);
+        }
+
+        // Mostrar en LB (Texas Standard)
+        const factor = 2.20462;
+        document.getElementById('dashStartWeight').innerText = (parseFloat(patientData.peso) * factor).toFixed(1);
+        document.getElementById('dashCurrWeight').innerText = (lastWeight * factor).toFixed(1);
+
+        // Años Recuperados (Día 1 vs Hoy)
+        const initialAge = parseInt(patientData.edad_metabolica);
+        const regained = initialAge - lastEdadM;
+        if(regained > 0) {
+            document.getElementById('bioAgeCard').classList.remove('hidden');
+            document.getElementById('dashRegained').innerText = regained;
+        }
+
+        generateAIRecommendation(lastWeight);
+        renderNutrition(planKey);
+    }
+
+    function generateAIRecommendation(currentW) {
+        const initialW = parseFloat(patientData.peso);
+        const diff = initialW - currentW;
+        const diffLb = (diff * 2.20462).toFixed(1);
+        
+        let msg = "";
+        if(diff > 0.5) {
+            msg = `Impressive work! You have oxidized ${diffLb} lbs of fat. Your metabolism is responding perfectly to the Infra Baldan light frequency. Focus on high protein intake today to protect your lean mass.`;
+        } else {
+            msg = `Your body is adapting to the protocol. To accelerate results, ensure you're drinking at least 2L of water and strictly avoid dairy this week. The next session will be key for your thermogenesis.`;
+        }
+        document.getElementById('aiRecommendation').innerText = msg;
+    }
+
+    function switchTab(view) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        if(view === 'progress') {
+            document.getElementById('view-progress').classList.remove('hidden');
+            document.getElementById('view-nutrition').classList.add('hidden');
+            document.getElementById('tab-progress').classList.add('active');
+        } else {
+            document.getElementById('view-progress').classList.add('hidden');
+            document.getElementById('view-nutrition').classList.remove('hidden');
+            document.getElementById('tab-nutrition').classList.add('active');
+            window.scrollTo(0,0);
+        }
+    }
+
+    function renderNutrition(planKey) {
+        const container = document.getElementById('nutritionContent');
+        
+        const protocols = {
+            "Ginoide": {
+                diet: [
+                    {t: "Morning", d: "Tea/Coffee (no sugar) + lactose-free yogurt or oat milk with 1 tbsp oat bran or spelt flakes."},
+                    {t: "Snack", d: "3-5 walnuts, or 6-8 almonds, or berries."},
+                    {t: "Lunch", d: "40-60g Basmati rice or whole-wheat pasta + lean meat (chicken/fish) + plenty of vegetables."},
+                    {t: "Dinner", d: "Chicken (no skin) or fish + unlimited vegetables. 1 small potato allowed."},
+                    {t: "⛔ Avoid", d: "Fried foods, sweets, cold cuts, whole dairy, cheese, pizza."}
+                ],
+                training: "Before session: Dumbbell chest press (3x12), lateral raises (3x10), biceps (2x10), triceps (3x10)."
+            },
+            "Androide": {
+                diet: [
+                    {t: "Morning", d: "Tea/Coffee + soy yogurt with 1 tbsp oat bran OR 2 whole-wheat rusks."},
+                    {t: "Snack", d: "4 walnuts or raw carrots/celery."},
+                    {t: "Lunch", d: "Legumes (chickpeas/beans) OR fish + raw/cooked vegetables + 1 fresh fruit."},
+                    {t: "Dinner", d: "Lean red meat (carpaccio/tartare) or fish + mixed vegetables. No carbs after 4:00 PM."},
+                    {t: "⛔ Avoid", d: "Bread, beer, juices, fried foods, cow's milk cheese."}
+                ],
+                training: "Before session: Free body squats (2x15), lunges (2x10), standing glute stretches (2x25). 20s recovery."
+            },
+            "Mixto": {
+                diet: [
+                    {t: "Morning", d: "Coffee/Tea + lactose-free yogurt with sugar-free granola OR 2 rusks with sugarless jam."},
+                    {t: "Snack", d: "1 seasonal fruit or 12 almonds."},
+                    {t: "Lunch", d: "Whole-wheat pasta with fresh tomato + fish OR lean meat + mixed vegetables."},
+                    {t: "Dinner", d: "Chicken breast or fish + base of mixed raw/cooked vegetables. Lactose-free fresh cheese allowed."},
+                    {t: "⛔ Avoid", d: "Fritos, alcohol, fats, breadsticks, corn cakes, pumpkin."}
+                ],
+                training: "No pre-session exercises required. We recommend increasing the Infra Baldan session time by 10 minutes."
+            },
+            "Menopausia": {
+                diet: [
+                    {t: "Morning", d: "Tea/Coffee + soy milk with 2 wholemeal rusks OR soy yogurt with oat bran."},
+                    {t: "Snack", d: "4 walnuts or crudités (carrots/celery)."},
+                    {t: "Lunch", d: "Wholemeal pasta with tomato OR fish/shellfish + vegetables + fruit."},
+                    {t: "Dinner", d: "Fish OR Omelette (3 whites, 1 yolk) + large fennel/celery salad (diuretic). No carbs."},
+                    {t: "⛔ Avoid", d: "Cold cuts, alcohol (red wine OK), fried foods, salt on salads."}
+                ],
+                training: "Focus on microcirculation: 3-5 minutes on vibrating platform if available before pedaling."
+            },
+            "Kit7Dias": {
+                diet: [
+                    {t: "Morning", d: "1 glass of water + Coffee/Tea (no sugar) + 1 Protein Bar or Shake."},
+                    {t: "Snack", d: "4 walnuts or 10 almonds + raw celery/fennel."},
+                    {t: "Lunch", d: "Protein shake + serving of green/white vegetables (no carrots/potatoes). 1 tbsp raw oil."},
+                    {t: "Dinner", d: "100% whole-wheat crackers + Chicken or Fish + vegetables."},
+                    {t: "⛔ Avoid", d: "Alcohol, fats, bread, pizza, sugar, salt."}
+                ],
+                training: "Mandatory: Multivitamins and metabolism accelerator during this 7-day shock phase."
+            }
+        };
+
+        const active = protocols[planKey] || protocols["Mixto"];
+        let html = "";
+        
+        active.diet.forEach(item => {
+            html += `
+                <div class="diet-item">
+                    <p class="text-[10px] font-black uppercase tracking-widest ${item.t.includes('Avoid') ? 'text-red-400' : 'text-slate-500'}">${item.t}</p>
+                    <p class="text-[15px] font-semibold mt-1 text-slate-200">${item.d}</p>
+                </div>`;
+        });
+
+        html += `
+            <div class="titan-card p-5 mt-10 border-gold/20 bg-gold/5">
+                <p class="text-[10px] font-black uppercase tracking-widest accent-gold">Training Instructions</p>
+                <p class="text-sm font-medium mt-2 text-slate-300 leading-relaxed">${active.training}</p>
+            </div>`;
+
+        container.innerHTML = html;
+    }
+</script>
+</body>
+</html>
