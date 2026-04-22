@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.14</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.15</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.14 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.15 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -79,6 +79,14 @@
                 <input type="number" id="newAge" class="input-titan border-blue-100" placeholder="Age (Years)">
                 <input type="number" id="newHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
                 <select id="newGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
+                <select id="newPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
+                    <option value="">-- Assign Nutrition Plan --</option>
+                    <option value="Ginoide">Ginoide (Pear Shape)</option>
+                    <option value="Androide">Androide (Apple Shape)</option>
+                    <option value="Mixto">Mixto (Mixed)</option>
+                    <option value="Menopausia">Menopausia</option>
+                    <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
+                </select>
             </div>
             <div class="bg-blue-50 p-3 rounded-[16px] border border-blue-100">
                 <div class="flex gap-3 items-center">
@@ -337,56 +345,39 @@
             title = "TOTAL WEIGHT";
             let diff = c.pesoAct - c.pesoId;
             let statusText = diff > 0 ? `Currently, you have a surplus of <b>${convP(diff).toFixed(1)} ${u}</b> to lose.` : `You are at or below your target weight.`;
-            
             desc = `<b>What it is:</b> The total sum of your body mass (fat, muscle, water, and bone).<br><br><b>Your Status:</b> Based on the exact lean mass you had on Day 1, your permanent clinical target is fixed at <b>${convP(c.pesoId).toFixed(1)} ${u}</b>. ${statusText}`;
             why = diff > 0 ? `Carrying excess weight forces your heart to work harder and adds destructive mechanical stress to your joints (like your knees and lower back). Reaching your target reduces internal inflammation and cardiovascular risk.` : `Maintaining this optimal weight reduces mechanical wear on your joints and keeps your cardiovascular system running efficiently. Excellent work.`;
-        } 
-        else if(metricId === 'fat') {
+        } else if(metricId === 'fat') {
             title = "BODY FAT %";
             let diffFat = c.grasaAct - c.grasaId;
-            
             desc = `<b>What it is:</b> The percentage of your total weight that is strictly fat tissue.<br><br><b>Your Status:</b> You are currently at <b>${c.grasaAct.toFixed(1)}%</b>. For your specific age and gender, the clinical healthy target is <b>${c.grasaId.toFixed(1)}%</b>.`;
             why = diffFat > 0 ? `Excess body fat acts as an active organ, constantly releasing inflammatory hormones into your bloodstream. Oxidizing this fat is our absolute priority to reverse insulin resistance and protect your heart.` : `Your body fat is in the optimal range. This promotes healthy hormone production, stable energy levels, and provides strong protection against metabolic diseases.`;
-        } 
-        else if(metricId === 'lean') {
+        } else if(metricId === 'lean') {
             title = "LEAN MASS (BASE)";
-            
             desc = `<b>What it is:</b> Everything in your body that isn't fat (your bones, organs, blood, and muscle).<br><br><b>Your Status:</b> You started with <b>${convP(c.magraBase).toFixed(1)} ${u}</b> of lean mass. Our goal is to protect it. You currently have <b>${convP(c.magraAct).toFixed(1)} ${u}</b>.`;
             why = c.magraAct < c.magraBase ? `<b>Warning:</b> You are losing vital tissue, not just fat. This can weaken your immune system and bone density. We need to adjust your nutrition to protect your base.` : `<b>Protected:</b> You are successfully retaining your vital physical structure while cutting fat. This is the gold standard of healthy, sustainable weight loss.`;
-        } 
-        else if(metricId === 'muscle') {
+        } else if(metricId === 'muscle') {
             title = "SKELETAL MUSCLE";
-            
             desc = `<b>What it is:</b> The dense, active tissue attached to your bones that drives all movement and strength.<br><br><b>Your Status:</b> You currently have <b>${convP(c.muscAct).toFixed(1)} ${u}</b> of active muscle. Your required baseline is <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
             why = c.muscAct < c.muscId ? `Muscle is the 'engine' that burns calories. Low muscle mass drastically slows your metabolism and increases the risk of weight rebound. We must focus on building muscle fiber.` : `<b>Hypertrophy Achieved/Maintained:</b> Your muscle mass acts as a powerful metabolic furnace. It actively burns calories even at rest and absorbs blood sugar efficiently, keeping you strong and lean.`;
-        } 
-        else if(metricId === 'water') {
+        } else if(metricId === 'water') {
             title = "BODY WATER";
-            
             desc = `<b>What it is:</b> The total percentage of fluids in your body, crucial for cellular survival.<br><br><b>Your Status:</b> Your hydration level is <b>${c.aguaAct.toFixed(1)}%</b>. The optimal clinical range is generally around <b>${c.aguaId}%</b>.`;
             why = c.aguaAct < (c.aguaId - 2) ? `Dehydration thickens your blood and slows down cell function. This means oxygen can't reach your tissues efficiently, which completely stalls fat oxidation. Drink more water.` : `Proper hydration ensures your body can flush out the toxins released from burning fat. It also keeps your skin, organs, and joints lubricated and healthy.`;
-        } 
-        else if(metricId === 'bmi') {
+        } else if(metricId === 'bmi') {
             title = "BODY MASS INDEX (BMI)";
-            
             desc = `<b>What it is:</b> A universal medical screening standard comparing your total weight to your height squared.<br><br><b>Your Status:</b> Your current BMI is <b>${isNaN(c.imcAct) ? '--' : c.imcAct.toFixed(1)}</b>. Your clinical target is <b>${c.imcId.toFixed(1)}</b>.`;
             why = (c.imcAct - c.imcId) > 2 ? `A high BMI indicates excessive mechanical load on your skeletal structure and correlates heavily with hypertension and sleep apnea. Lowering it directly relieves pressure on your heart.` : `Your BMI is in a healthy, balanced range. Your skeletal frame is supporting an appropriate amount of weight, heavily protecting your joints and cardiovascular system.`;
-        } 
-        else if(metricId === 'visceral') {
+        } else if(metricId === 'visceral') {
             title = "VISCERAL FAT";
-            
             desc = `<b>What it is:</b> The highly dangerous fat stored deep inside your abdominal cavity, wrapping around vital organs like the liver and pancreas.<br><br><b>Your Status:</b> Your current level is <b>${isNaN(c.viscAct) ? '--' : c.viscAct}</b>. The safe medical limit is Level <b>9</b> or below.`;
             why = c.viscAct > 9 ? `<b>Critical Risk:</b> High visceral fat physically chokes organ function and is the direct leading cause of Type 2 Diabetes and fatty liver disease. Reducing this is our top medical priority.` : `<b>Optimal:</b> Your internal organs are free from dangerous fat wrapping. This allows your liver and pancreas to function at peak metabolic capacity without toxic interference.`;
-        } 
-        else if(metricId === 'age') {
+        } else if(metricId === 'age') {
             title = "METABOLIC AGE";
-            
             desc = `<b>What it is:</b> A biometrics calculation of how your body performs internally compared to chronological averages.<br><br><b>Your Status:</b> Your chronological age is <b>${c.edadMId} yrs</b>, but biologically your body performs like someone who is <b>${isNaN(c.edadMAct) ? '--' : c.edadMAct} yrs</b> old.`;
             why = c.edadMAct > c.edadMId ? `Your body is aging faster than the calendar due to oxidative stress and poor composition. Reaching your fat and muscle targets will literally reverse your cellular aging.` : `<b>Rejuvenated:</b> Your cellular health and metabolism are performing younger than your actual age. This is a massive indicator of excellent vitality and longevity.`;
-        } 
-        else if(metricId === 'bmr') {
+        } else if(metricId === 'bmr') {
             title = "BASAL METABOLIC RATE (BMR)";
-            
             desc = `<b>What it is:</b> The exact minimum number of calories your body burns every 24 hours just to stay alive at complete rest.<br><br><b>Your Status:</b> You naturally burn <b>${isNaN(c.bmrAct) ? '--' : Math.round(c.bmrAct)} kcal</b> at rest. Reaching your ideal composition will adjust this to <b>${Math.round(c.bmrId)} kcal/day</b>.`;
             why = c.bmrAct < c.bmrId ? `Your metabolism is running slow, meaning your body easily stores excess food as fat. By building muscle tissue, we will increase this rate so you burn fat effortlessly.` : `Your metabolism is highly active and efficient. Your body operates as a capable engine that oxidizes energy quickly, making it much harder to gain unwanted fat.`;
         }
@@ -480,7 +471,6 @@
         
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
         
-        // VALORES INICIALES (DÍA 1)
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -491,7 +481,6 @@
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
-        // VALORES ACTUALES
         let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
         
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
@@ -598,10 +587,15 @@
         document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
         document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
 
-        // LÓGICA REJUVENATION BADGE RESTAURADA AL DÍA 1
+        let badge = document.getElementById('rejuvenationBadge');
+        // SE CORRIGE LA FÓRMULA DE REJUVENECIMIENTO AL ESTADO DE V4.13
         let ageDiff = iniEdadM - actEdadM;
-        document.getElementById('rejuvenationBadge').style.display = ageDiff > 0 ? 'block' : 'none';
-        if(ageDiff > 0) document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`;
+        if (!isNaN(ageDiff) && ageDiff > 0) {
+            badge.style.display = 'block';
+            document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`;
+        } else {
+            badge.style.display = 'none';
+        }
 
         let semanasParaMeta = Math.max(0, difPesoGoal) / (2 * 0.453592); 
         if(semanasParaMeta <= 0) {
@@ -643,9 +637,22 @@
     }
 
     async function saveNewClient() {
-        const f = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender'];
-        for(let id of f) { if(!document.getElementById(id).value) { alert("Complete fields."); return; } }
-        const c = { id: document.getElementById('newID').value || `ID-${Date.now()}`, nombre: document.getElementById('newName').value, sexo: document.getElementById('newGender').value==='Male'?'Masculino':'Femenino', edad: document.getElementById('newAge').value, altura: document.getElementById('newHeight').value, peso: document.getElementById('newWeight').value, grasa: document.getElementById('newFat').value, fechaInicio: new Date().toISOString().split('T')[0], predicta_data: datosClinicosTemporales };
+        const f = ['newName', 'newAge', 'newHeight', 'newWeight', 'newGender', 'newPlan'];
+        for(let id of f) { if(!document.getElementById(id).value) { alert("Please complete all fields (including Nutrition Plan) and read scale."); return; } }
+        
+        const c = { 
+            id: document.getElementById('newID').value || `ID-${Date.now()}`, 
+            nombre: document.getElementById('newName').value, 
+            sexo: document.getElementById('newGender').value==='Male'?'Masculino':'Femenino', 
+            edad: document.getElementById('newAge').value, 
+            altura: document.getElementById('newHeight').value, 
+            peso: document.getElementById('newWeight').value, 
+            grasa: document.getElementById('newFat').value, 
+            fechaInicio: new Date().toISOString().split('T')[0], 
+            plan_asignado: document.getElementById('newPlan').value, // ENVÍO DEL NUEVO CAMPO
+            predicta_data: datosClinicosTemporales 
+        };
+        
         document.getElementById('btStatusNew').innerText = "SAVING...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente: c }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
