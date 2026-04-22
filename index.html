@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.9</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.10</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -12,16 +12,19 @@
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; font-size: 12px; }
         .predicta-card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
-        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
+        .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
         #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
+        
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
         .comp-table td { padding: 6px 4px; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+        
         .val-ideal { color: #10b981; font-weight: 900; }
         .id-badge { background: #1e293b; color: #60a5fa; padding: 2px 10px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
         .info-btn { cursor: pointer; color: #94a3b8; margin-left: 5px; transition: color 0.2s; font-size: 11px; }
         .info-btn:hover { color: #3b82f6; }
+        
         @media print {
             html, body { height: auto !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body > *:not(#modalDetalle) { display: none !important; }
@@ -44,7 +47,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.9 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.10 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -205,12 +208,14 @@
     </div>
 
 <script>
+    // URL DE CONEXIÓN CON GOOGLE SHEETS
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFeWkmJWMk0sJmfkURf8s47QXrxfiEnLeFXtoUYivHljghjBC3Zn6yrwbA5QVc6e_k/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
     let lblU = 'kg'; 
     let currentCalc = {}; 
 
+    // --- FUNCIONES DE HISTORIAL ---
     function openHistory() {
         if (!currentPatient) return;
         document.getElementById('histPatientName').innerText = currentPatient.nombre || 'Patient';
@@ -221,13 +226,12 @@
         let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
         let edad = parseFloat(pOrig.edad || 0);
 
-        // --- CALCULAR TARGET FIJO (BASADO EN DÍA 1) ---
+        // Meta Fija del Día 1
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
         let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
         
-        // Fila 1: TARGET (META CLÍNICA)
         let html = `
             <tr class="bg-emerald-50 border-b-2 border-emerald-100">
                 <td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td>
@@ -239,11 +243,9 @@
         `;
 
         let log = [];
-        // Sesión 1: Base
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         log.push({ s: "S1 (Day 1)", f: pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--', p: iniPeso, g: iniGrasa, m: iniFfm * 0.56, e: iniEdadM });
 
-        // Sesiones siguientes: Avances
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sorted = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             sorted.forEach((av, i) => {
@@ -255,11 +257,8 @@
             });
         }
 
-        // Renderizar el log comparativo
         log.forEach((curr, i) => {
             let prev = i > 0 ? log[i-1] : null;
-            
-            // Variación Peso
             let pVar = "";
             if (prev) {
                 let diff = curr.p - prev.p;
@@ -268,15 +267,11 @@
                     pVar = `<span class="${color} text-[10px] block font-black">${diff > 0 ? '+' : ''}${convP(diff).toFixed(1)}</span>`;
                 }
             }
-
-            // Indicador de Grasa (Bajar es bueno)
             let gInd = "";
             if (prev) {
                 if (curr.g < prev.g) gInd = `<span class="text-emerald-500 ml-1">▼</span>`;
                 else if (curr.g > prev.g) gInd = `<span class="text-orange-500 ml-1">▲</span>`;
             }
-
-            // Indicador de Músculo (Subir es bueno)
             let mInd = "";
             if (prev) {
                 if (curr.m > prev.m) mInd = `<span class="text-indigo-500 ml-1">▲</span>`;
@@ -300,6 +295,7 @@
 
     function closeHistory() { document.getElementById('historyModalPanel').style.display = 'none'; }
 
+    // --- FUNCIÓN DE CAPTURA DE PANTALLA ---
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
@@ -332,6 +328,7 @@
         });
     }
 
+    // --- EXPLICACIONES CLÍNICAS ---
     function showInfo(metricId) {
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
@@ -397,6 +394,20 @@
         return { peso: pIdeal, grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
     }
 
+    function renderDiff(act, ini, isLowerBetter, suffix) {
+        if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
+        let d = act - ini; if(Math.abs(d) < 0.1) return `<span class="text-gray-400 font-bold">0.0 <span class="text-[8px]">${suffix}</span></span>`;
+        let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
+        return `<span class="font-black ${c}">${d > 0 ? '+' : ''}${d.toFixed(1)} <span class="text-[8px]">${suffix}</span></span>`;
+    }
+
+    function renderDiffInt(act, ini, isLowerBetter, suffix) {
+        if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
+        let d = Math.round(act - ini); if(d === 0) return `<span class="text-gray-400 font-bold">0 <span class="text-[8px]">${suffix}</span></span>`;
+        let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
+        return `<span class="font-black ${c}">${d > 0 ? '+' : ''}${d} <span class="text-[8px]">${suffix}</span></span>`;
+    }
+
     function renderTable(data) {
         lblU = unitMode === 'KG' ? 'kg' : 'lb';
         const tbody = document.getElementById('clientTableBody'); tbody.innerHTML = '';
@@ -420,10 +431,10 @@
         document.getElementById('currentUnitText').innerText = (unitMode === 'KG' ? 'KG / CM' : 'LB / IN'); 
         renderTable(globalData); 
         if (currentPatient && document.getElementById('modalDetalle').style.display === 'block') selectPatient(currentPatient);
-        // Actualizar historial al vuelo si está abierto
         if (document.getElementById('historyModalPanel').style.display === 'block') openHistory();
     }
 
+    // --- RESTAURACIÓN TOTAL DEL DOM Y CLASES (EL BLOQUE PERDIDO) ---
     function selectPatient(p) {
         currentPatient = p;
         let pOrig = globalData.find(c => c.id === p.id) || p;
@@ -436,59 +447,205 @@
         document.getElementById('modalID').innerText = `ID: ${pOrig.id}`;
         document.getElementById('modalNombre').innerText = pOrig.nombre || 'Patient';
         document.getElementById('modalInfo').innerText = `${isMale?'M':'F'} | ${pOrig.edad || 0} YRS | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
+        
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
-        let iniPeso = parseFloat(pOrig.peso || 0), iniGrasa = parseFloat(pOrig.grasa || 0);
+        
+        // VALORES INICIALES (DÍA 1)
+        let iniPeso = parseFloat(pOrig.peso || 0);
+        let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
+        let iniMusc = iniFfm * 0.56;
+        let iniAgua = parseFloat(pOrig.agua_corporal_perc || ((iniFfm * 0.732 / iniPeso) * 100));
+        let iniImc = iniPeso / Math.pow(altura/100, 2);
+        let iniVisc = Math.max(1, Math.round(pOrig.grasa_visceral || ((iniGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
+        let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
+        let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
-        let actPeso = p.isTempScan ? parseFloat(p.peso) : iniPeso, actGrasa = p.isTempScan ? parseFloat(p.grasa) : iniGrasa;
+        // VALORES ACTUALES
+        let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
+        
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
             let last = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).pop();
-            actPeso = parseFloat(last.peso); actGrasa = parseFloat(last.grasa);
+            actPeso = parseFloat(last.peso || actPeso);
+            actGrasa = parseFloat(last.grasa || actGrasa);
+            if(last.predicta_data) {
+                actViscVal = last.predicta_data.visceral || actViscVal;
+                actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal;
+                actBmrVal = last.predicta_data.bmr || actBmrVal;
+                actAguaVal = last.predicta_data.agua_perc || actAguaVal;
+            }
         }
-        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
-        currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
-
-        document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
-        document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1);
-        document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1);
-        document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
-        document.getElementById('tGrasaAct').innerText = actGrasa.toFixed(1);
-        document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1);
-        document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
-        document.getElementById('tMagraAct').innerText = convP(actFfm).toFixed(1);
-        document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1);
-        document.getElementById('tMuscIni').innerText = convP(iniFfm*0.56).toFixed(1);
-        document.getElementById('tMuscAct').innerText = convP(actFfm*0.56).toFixed(1);
-        document.getElementById('tMuscId').innerText = convP(metas.magra*0.56).toFixed(1);
-        document.getElementById('tAguaAct').innerText = currentCalc.aguaAct.toFixed(1);
-        document.getElementById('tAguaId').innerText = metas.agua_perc;
-        document.getElementById('tImcAct').innerText = currentCalc.imcAct.toFixed(1);
-        document.getElementById('tImcId').innerText = metas.imc;
-        document.getElementById('tViscAct').innerText = currentCalc.viscAct;
-        document.getElementById('tViscId').innerText = "9";
-        document.getElementById('tEdadMAct').innerText = currentCalc.edadMAct;
-        document.getElementById('tEdadMId').innerText = edad;
-        document.getElementById('tBmrAct').innerText = Math.round(currentCalc.bmrAct);
-        document.getElementById('tBmrId').innerText = Math.round(currentCalc.bmrId);
         
-        let ageDiff = currentCalc.edadMId - currentCalc.edadMAct;
-        document.getElementById('rejuvenationBadge').style.display = ageDiff > 0 ? 'block' : 'none';
-        if(ageDiff > 0) document.getElementById('yearsRegained').innerText = `-${ageDiff} YRS`;
+        if (p.isTempScan) {
+            actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa);
+            actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc;
+        }
 
+        let actFfm = actPeso * (1 - (actGrasa/100));
+        let actMusc = actFfm * 0.56;
+        let actAgua = parseFloat(actAguaVal || ((actFfm * 0.732 / actPeso) * 100));
+        let actImc = actPeso / Math.pow(altura/100, 2);
+        let actVisc = Math.max(1, Math.round(actViscVal || ((actGrasa * 0.25) + (edad * 0.12) - (isMale ? 3 : 6))));
+        let actEdadM = Math.max(18, Math.round(actEdadMVal || (edad + (actGrasa - (isMale?15:22)) * 0.5)));
+        let actBmr = parseFloat(actBmrVal || (370 + (21.6 * actFfm)));
+
+        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+
+        currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56, aguaAct: actAgua, aguaId: metas.agua_perc, imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9, edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra) };
+
+        // ACTUALIZACIÓN DEL DOM - DÍA 1
+        document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
+        document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
+        document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
+        document.getElementById('tMuscIni').innerText = convP(iniMusc).toFixed(1);
+        document.getElementById('tAguaIni').innerText = iniAgua.toFixed(1);
+        document.getElementById('tImcIni').innerText = isNaN(iniImc) ? '--' : iniImc.toFixed(1);
+        document.getElementById('tViscIni').innerText = isNaN(iniVisc) ? '--' : iniVisc;
+        document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
+        document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
+
+        // ACTUALIZACIÓN DEL DOM - CURRENT, PROGRESS, GOAL, STATUS
+        let difPesoGoal = actPeso - metas.peso;
+        document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
+        document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
+        document.getElementById('tPesoPrg').innerHTML = renderDiff(convP(actPeso), convP(iniPeso), true, lblU);
+        document.getElementById('tPesoId').innerText = convP(metas.peso).toFixed(1) + ' ' + lblU;
+        document.getElementById('tPesoEst').innerText = (difPesoGoal > 0 ? 'SURPLUS: ' : 'DEFICIT: ') + Math.abs(convP(difPesoGoal)).toFixed(1) + ' ' + lblU;
+        document.getElementById('tPesoEst').className = difPesoGoal > 0 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+
+        document.getElementById('tGrasaAct').innerText = actGrasa.toFixed(1) + ' %';
+        document.getElementById('tGrasaAct').className = actGrasa > metas.grasa_perc ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tGrasaPrg').innerHTML = renderDiff(actGrasa, iniGrasa, true, '%');
+        document.getElementById('tGrasaId').innerText = metas.grasa_perc.toFixed(1) + ' %';
+        document.getElementById('tGrasaEst').innerText = actGrasa <= metas.grasa_perc ? 'OPTIMAL' : 'FAT OXIDATION';
+        document.getElementById('tGrasaEst').className = actGrasa <= metas.grasa_perc ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        document.getElementById('tMagraAct').innerText = convP(actFfm).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMagraAct').className = actFfm < metas.magra ? 'text-center font-black text-orange-500' : 'text-center font-black text-slate-700';
+        document.getElementById('tMagraPrg').innerHTML = renderDiff(convP(actFfm), convP(iniFfm), false, lblU);
+        document.getElementById('tMagraId').innerText = convP(metas.magra).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMagraEst').innerText = actFfm >= metas.magra ? 'PROTECTED' : 'AT RISK';
+        document.getElementById('tMagraEst').className = actFfm >= metas.magra ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        let difMuscGoal = actMusc - (metas.magra * 0.56);
+        document.getElementById('tMuscAct').innerText = convP(actMusc).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMuscAct').className = difMuscGoal < 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-600';
+        document.getElementById('tMuscPrg').innerHTML = renderDiff(convP(actMusc), convP(iniMusc), false, lblU);
+        document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMuscEst').innerText = difMuscGoal >= 0 ? 'HYPERTROPHY' : 'NEEDS FIBER';
+        document.getElementById('tMuscEst').className = difMuscGoal >= 0 ? 'text-right text-[9px] uppercase font-bold text-indigo-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        document.getElementById('tAguaAct').innerText = actAgua.toFixed(1) + ' %';
+        document.getElementById('tAguaAct').className = actAgua < (metas.agua_perc - 2) ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-500';
+        document.getElementById('tAguaPrg').innerHTML = renderDiff(actAgua, iniAgua, false, '%');
+        document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
+        document.getElementById('tAguaEst').innerText = actAgua >= metas.agua_perc ? 'HYDRATED' : 'DEHYDRATED';
+        document.getElementById('tAguaEst').className = actAgua >= metas.agua_perc ? 'text-right text-[9px] uppercase font-bold text-blue-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        document.getElementById('tImcAct').innerText = isNaN(actImc) ? '--' : actImc.toFixed(1);
+        document.getElementById('tImcAct').className = (actImc - metas.imc) > 2 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tImcPrg').innerHTML = renderDiff(actImc, iniImc, true, '');
+        document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
+        document.getElementById('tImcEst').innerText = (actImc - metas.imc) > 2 ? 'OVERWEIGHT' : 'BALANCED';
+        document.getElementById('tImcEst').className = (actImc - metas.imc) > 2 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+
+        document.getElementById('tViscAct').innerText = isNaN(actVisc) ? '--' : actVisc + ' Lvl';
+        document.getElementById('tViscAct').className = actVisc > 9 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tViscPrg').innerHTML = renderDiffInt(actVisc, iniVisc, true, 'Lvl');
+        document.getElementById('tViscId').innerText = '≤ 9 Lvl';
+        document.getElementById('tViscEst').innerText = actVisc > 9 ? 'CRITICAL' : 'OPTIMAL';
+        document.getElementById('tViscEst').className = actVisc > 9 ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+
+        document.getElementById('tEdadMAct').innerText = isNaN(actEdadM) ? '--' : actEdadM + ' yrs';
+        document.getElementById('tEdadMAct').className = actEdadM > edad ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tEdadMPrg').innerHTML = renderDiffInt(actEdadM, iniEdadM, true, 'yrs');
+        document.getElementById('tEdadMId').innerText = '≤ ' + edad + ' yrs';
+        document.getElementById('tEdadMEst').innerText = actEdadM > edad ? 'OXIDATIVE' : 'REJUVENATED';
+        document.getElementById('tEdadMEst').className = actEdadM > edad ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+
+        document.getElementById('tBmrAct').innerText = isNaN(actBmr) ? '--' : Math.round(actBmr) + ' kcal';
+        document.getElementById('tBmrAct').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-center font-black text-orange-500' : 'text-center font-black text-slate-800';
+        document.getElementById('tBmrPrg').innerHTML = renderDiffInt(actBmr, iniBmr, false, 'kcal');
+        document.getElementById('tBmrId').innerText = Math.round(370 + (21.6 * metas.magra)) + ' kcal';
+        document.getElementById('tBmrEst').innerText = actBmr < (370 + (21.6 * metas.magra)) ? 'SLOW' : 'ACTIVE';
+        document.getElementById('tBmrEst').className = actBmr < (370 + (21.6 * metas.magra)) ? 'text-right text-[9px] uppercase font-bold text-orange-500' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+
+        let ageDiff = iniEdadM - actEdadM;
+        let badge = document.getElementById('rejuvenationBadge');
+        if (!isNaN(ageDiff) && ageDiff > 0) {
+            badge.style.display = 'block';
+            document.getElementById('yearsRegained').innerText = `-${ageDiff} YRS`;
+        } else {
+            badge.style.display = 'none';
+        }
+
+        let semanasParaMeta = Math.max(0, difPesoGoal) / (2 * 0.453592); 
+        if(semanasParaMeta <= 0) {
+            document.getElementById('progDateText').innerText = "TODAY";
+            document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
+        } else {
+            let fechaMeta = new Date(); fechaMeta.setDate(fechaMeta.getDate() + (semanasParaMeta * 7));
+            document.getElementById('progDateText').innerText = fechaMeta.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
+        }
         document.getElementById('modalDetalle').style.display = 'block';
-        initChart(pOrig, p, actPeso - metas.peso, Math.max(0, (actPeso - metas.peso)/(2*0.453592)));
+        
+        // RESTAURACIÓN DE LA GRÁFICA CON LÍNEA DE PROYECCIÓN
+        initChart(pOrig, p, actPeso - metas.peso, semanasParaMeta);
     }
 
-    function initChart(pO, pT, dP, sR) {
+    // --- RESTAURACIÓN TOTAL DE LA GRÁFICA (EL BLOQUE PERDIDO) ---
+    function initChart(pO, pT, difPesoKG, semanasRestantes) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
-        if(pO.avances) pO.avances.forEach(a => r.push({fecha: new Date(a.fecha), p: parseFloat(a.peso)}));
-        if(pT.isTempScan) r.push({fecha: new Date(), p: parseFloat(pT.peso)});
-        r.sort((a,b) => a.fecha - b.fecha);
-        let l = [], rd = [], id = [];
-        r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
-        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')' } } } } });
+        
+        let registros = [{fecha: new Date(pO.fechaInicio), pesoKG: parseFloat(pO.peso)}];
+        if(pO.avances) pO.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
+        
+        if(pT.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pT.peso)});
+        
+        registros.sort((a,b) => a.fecha - b.fecha);
+        let labels = [], realData = [], idealData = []; 
+        registros.forEach((reg, i) => { 
+            let sNum = i + 1;
+            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
+            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
+            realData.push(convP(reg.pesoKG)); 
+            idealData.push(null); 
+        });
+        
+        if (difPesoKG > 0) {
+            let ultimoPesoKG = registros[registros.length-1].pesoKG;
+            let sesionesActuales = registros.length;
+            idealData[idealData.length-1] = convP(ultimoPesoKG); 
+            let puntosProyeccion = 4;
+            for(let i=1; i<=puntosProyeccion; i++) {
+                let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
+                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
+                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
+                realData.push(null);
+                idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
+            }
+        }
+        
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: labels, 
+                datasets: [
+                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
+                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
+                ] 
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { legend: { display: true, position: 'bottom' } }, 
+                scales: { 
+                    y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, 
+                    x: { ticks: { font: { size: 9 } } } 
+                } 
+            }
+        });
     }
 
     async function saveNewClient() {
@@ -510,13 +667,6 @@
             document.getElementById('btStatusSeg').innerText = "DATA UPDATED ✅";
             setTimeout(() => { datosClinicosTemporales = {}; closeModal(); fetchData(); }, 1200);
         } catch(e) { document.getElementById('btStatusSeg').innerText = "❌ ERROR"; }
-    }
-
-    function renderDiff(act, ini, isLowerBetter, suffix) {
-        if(isNaN(act) || isNaN(ini) || ini === 0) return `--`;
-        let d = act - ini; if(Math.abs(d) < 0.1) return `0.0`;
-        let c = isLowerBetter ? (d < 0 ? 'text-emerald-500' : 'text-orange-500') : (d > 0 ? 'text-emerald-500' : 'text-orange-500');
-        return `<span class="${c}">${d > 0 ? '+' : ''}${d.toFixed(1)}</span>`;
     }
 
     async function conectarBáscula(contexto) {
@@ -547,7 +697,7 @@
                         datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex);
                         fI.value = datosClinicosTemporales.grasa_porcentaje;
                         if (contexto !== 'nuevo') {
-                            let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true };
+                            let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales };
                             selectPatient(pT);
                         }
                         st.innerText = "✅ SCAN COMPLETED.";
