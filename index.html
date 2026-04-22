@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.10</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.11</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -47,7 +47,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.10 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.11 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -58,7 +58,14 @@
         <div class="predicta-card overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-[8px] font-black uppercase text-gray-400 border-b italic">
-                    <tr><th class="px-6 py-2">FILE ID</th><th class="px-6 py-2">PATIENT</th><th class="px-6 py-2 text-center">PROFILE</th><th class="px-6 py-2 text-center text-blue-600">CURRENT WEIGHT</th><th class="px-6 py-2 text-right">RECORD</th></tr>
+                    <tr>
+                        <th class="px-6 py-2">FILE ID</th>
+                        <th class="px-6 py-2">PATIENT</th>
+                        <th class="px-6 py-2 text-center">PROFILE</th>
+                        <th class="px-6 py-2 text-center text-slate-500">START WEIGHT</th>
+                        <th class="px-6 py-2 text-center text-blue-600">CURRENT WEIGHT</th>
+                        <th class="px-6 py-2 text-right">RECORD</th>
+                    </tr>
                 </thead>
                 <tbody id="clientTableBody" class="divide-y divide-gray-50 font-medium text-xs italic"></tbody>
             </table>
@@ -226,7 +233,6 @@
         let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
         let edad = parseFloat(pOrig.edad || 0);
 
-        // Meta Fija del Día 1
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -295,7 +301,6 @@
 
     function closeHistory() { document.getElementById('historyModalPanel').style.display = 'none'; }
 
-    // --- FUNCIÓN DE CAPTURA DE PANTALLA ---
     function descargarImagen() {
         if(!currentPatient) return;
         let btn = document.getElementById('btnSaveImage');
@@ -328,7 +333,6 @@
         });
     }
 
-    // --- EXPLICACIONES CLÍNICAS ---
     function showInfo(metricId) {
         let title = "", desc = "", why = "";
         let u = lblU.toUpperCase(); 
@@ -416,11 +420,22 @@
             tr.className = "hover:bg-blue-50 cursor-pointer border-b italic";
             tr.onclick = () => selectPatient(p);
             let sexEn = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m') ? 'M' : 'F';
+            
+            // LÓGICA REPARADA PARA LA PANTALLA PRINCIPAL
+            let iniPeso = parseFloat(p.peso || 0);
+            let actPeso = iniPeso;
+            if (p.avances && p.avances.length > 0) {
+                let sorted = [...p.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+                let last = sorted[sorted.length - 1];
+                actPeso = parseFloat(last.peso || actPeso);
+            }
+
             tr.innerHTML = `
                 <td class="px-6 py-3"><span class="id-badge">${p.id}</span></td>
                 <td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td>
                 <td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${sexEn} | ${p.edad || 0} YRS | ${convA(p.altura)}</td>
-                <td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(p.peso).toFixed(1)} ${lblU}</td>
+                <td class="px-6 py-3 text-center font-bold text-slate-500 text-sm">${convP(iniPeso).toFixed(1)} ${lblU}</td>
+                <td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(actPeso).toFixed(1)} ${lblU}</td>
                 <td class="px-6 py-3 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
         });
@@ -434,7 +449,6 @@
         if (document.getElementById('historyModalPanel').style.display === 'block') openHistory();
     }
 
-    // --- RESTAURACIÓN TOTAL DEL DOM Y CLASES (EL BLOQUE PERDIDO) ---
     function selectPatient(p) {
         currentPatient = p;
         let pOrig = globalData.find(c => c.id === p.id) || p;
@@ -450,7 +464,6 @@
         
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
         
-        // VALORES INICIALES (DÍA 1)
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -461,7 +474,6 @@
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
         let iniBmr = parseFloat(pOrig.bmr_kcal || (370 + (21.6 * iniFfm)));
 
-        // VALORES ACTUALES
         let actPeso = iniPeso, actGrasa = iniGrasa, actViscVal = pOrig.grasa_visceral, actEdadMVal = pOrig.edad_metabolica, actBmrVal = pOrig.bmr_kcal, actAguaVal = pOrig.agua_corporal_perc;
         
         if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
@@ -493,7 +505,6 @@
 
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actMusc, muscId: metas.magra * 0.56, aguaAct: actAgua, aguaId: metas.agua_perc, imcAct: actImc, imcId: metas.imc, viscAct: actVisc, viscId: 9, edadMAct: actEdadM, edadMId: edad, bmrAct: actBmr, bmrId: 370 + (21.6 * metas.magra) };
 
-        // ACTUALIZACIÓN DEL DOM - DÍA 1
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
@@ -504,7 +515,6 @@
         document.getElementById('tEdadMIni').innerText = isNaN(iniEdadM) ? '--' : iniEdadM;
         document.getElementById('tBmrIni').innerText = isNaN(iniBmr) ? '--' : Math.round(iniBmr);
 
-        // ACTUALIZACIÓN DEL DOM - CURRENT, PROGRESS, GOAL, STATUS
         let difPesoGoal = actPeso - metas.peso;
         document.getElementById('tPesoAct').innerText = convP(actPeso).toFixed(1) + ' ' + lblU;
         document.getElementById('tPesoAct').className = difPesoGoal > 0 ? 'text-center font-black text-orange-500' : 'text-center font-black text-blue-600';
@@ -589,63 +599,33 @@
             document.getElementById('prognosisSessions').innerText = `${Math.ceil(semanasParaMeta * 2)} SESSIONS | ${Math.ceil(semanasParaMeta)} WEEKS`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
-        
-        // RESTAURACIÓN DE LA GRÁFICA CON LÍNEA DE PROYECCIÓN
-        initChart(pOrig, p, actPeso - metas.peso, semanasParaMeta);
+        initChart(pOrig, p, difPesoGoal, semanasParaMeta);
     }
 
-    // --- RESTAURACIÓN TOTAL DE LA GRÁFICA (EL BLOQUE PERDIDO) ---
     function initChart(pO, pT, difPesoKG, semanasRestantes) {
         const ctx = document.getElementById('progressChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
-        
-        let registros = [{fecha: new Date(pO.fechaInicio), pesoKG: parseFloat(pO.peso)}];
-        if(pO.avances) pO.avances.forEach(a => registros.push({fecha: new Date(a.fecha), pesoKG: parseFloat(a.peso)}));
-        
-        if(pT.isTempScan) registros.push({fecha: new Date(), pesoKG: parseFloat(pT.peso)});
-        
-        registros.sort((a,b) => a.fecha - b.fecha);
-        let labels = [], realData = [], idealData = []; 
-        registros.forEach((reg, i) => { 
-            let sNum = i + 1;
-            let semNum = (sNum / 2).toFixed(1).replace('.0', '');
-            labels.push('S' + sNum + ' (Wk ' + semNum + ')'); 
-            realData.push(convP(reg.pesoKG)); 
-            idealData.push(null); 
-        });
+        let r = [{fecha: new Date(pO.fechaInicio), p: parseFloat(pO.peso)}];
+        if(pO.avances) pO.avances.forEach(a => r.push({fecha: new Date(a.fecha), p: parseFloat(a.peso)}));
+        if(pT.isTempScan) r.push({fecha: new Date(), p: parseFloat(pT.peso)});
+        r.sort((a,b) => a.fecha - b.fecha);
+        let l = [], rd = [], id = [];
+        r.forEach((reg, i) => { l.push('S'+(i+1)); rd.push(convP(reg.p)); id.push(null); });
         
         if (difPesoKG > 0) {
-            let ultimoPesoKG = registros[registros.length-1].pesoKG;
-            let sesionesActuales = registros.length;
-            idealData[idealData.length-1] = convP(ultimoPesoKG); 
+            let ultimoPesoKG = r[r.length-1].p;
+            let sesionesActuales = r.length;
+            id[id.length-1] = convP(ultimoPesoKG); 
             let puntosProyeccion = 4;
             for(let i=1; i<=puntosProyeccion; i++) {
                 let proySesion = sesionesActuales + ((semanasRestantes * 2) * (i / puntosProyeccion));
-                let proySem = (proySesion / 2).toFixed(1).replace('.0', '');
-                labels.push('S' + Math.round(proySesion) + ' (Wk ' + proySem + ')'); 
-                realData.push(null);
-                idealData.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
+                labels.push('S' + Math.round(proySesion)); 
+                rd.push(null);
+                id.push(convP(ultimoPesoKG - (difPesoKG * (i / puntosProyeccion))));
             }
         }
         
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: labels, 
-                datasets: [
-                    { label: 'Actual History', data: realData, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5, backgroundColor: '#2563eb', spanGaps: true },
-                    { label: 'Medical Projection', data: idealData, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }
-                ] 
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { display: true, position: 'bottom' } }, 
-                scales: { 
-                    y: { title: { display: true, text: 'Weight (' + lblU.toUpperCase() + ')', font: { size: 10, weight: 'bold' } }, ticks: { font: { size: 9 } } }, 
-                    x: { ticks: { font: { size: 9 } } } 
-                } 
-            }
-        });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: l, datasets: [{ label: 'Actual', data: rd, borderColor: '#2563eb', tension: 0.3, borderWidth: 4, pointRadius: 5 }, { label: 'Medical Projection', data: id, borderColor: '#cbd5e1', borderDash: [5, 5], tension: 0, borderWidth: 3, pointRadius: 0, spanGaps: true }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Weight ('+lblU+')' } } } } });
     }
 
     async function saveNewClient() {
