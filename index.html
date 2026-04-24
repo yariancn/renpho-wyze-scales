@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.16</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.17</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -406,7 +406,7 @@
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
         document.getElementById('tMuscIni').innerText = convP(iniFfm*0.56).toFixed(1);
-        document.getElementById('tAguaIni').innerText = iniAguaVal ? parseFloat(iniAguaVal).toFixed(1) : '--';
+        document.getElementById('tAguaIni').innerText = pOrig.agua_corporal_perc ? parseFloat(pOrig.agua_corporal_perc).toFixed(1) : '--';
         document.getElementById('tImcIni').innerText = iniPeso ? (iniPeso/Math.pow(altura/100,2)).toFixed(1) : '--';
         document.getElementById('tViscIni').innerText = pOrig.grasa_visceral || '--';
         document.getElementById('tEdadMIni').innerText = pOrig.edad_metabolica || '--';
