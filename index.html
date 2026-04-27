@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.17</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.16</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -220,6 +220,7 @@
     </div>
 
 <script>
+    // URL DE CONEXIÓN CON GOOGLE SHEETS
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
@@ -400,6 +401,10 @@
         }
         if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
         let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+        
+        // MODIFICACIÓN DE LA FUNCIÓN DE IA: 3 a 2 SESIONES
+        generateAI_Admin(iniGrasa, actGrasa, actViscVal, pOrig.nombre);
+
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: actAguaVal || (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: actViscVal || Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: actEdadMVal || Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: actBmrVal || 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
 
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
@@ -461,6 +466,25 @@
         }
         document.getElementById('modalDetalle').style.display = 'block';
         initChart(pOrig, p, actPeso - metas.peso, sPM);
+    }
+
+    function generateAI_Admin(iniGrasa, actGrasa, actVisc, nombrePaciente) {
+        // Esta función replica la lógica de la IA, solo que está incrustada en el proceso de la Báscula.
+        // Como la báscula de momento no despliega el "AI Report" en su interfaz web (lo hace en el iPad de manera distinta), 
+        // dejamos este bloque preparado por si en el futuro decides visualizar el reporte aquí mismo.
+        let msg = `Clinical analysis for ${nombrePaciente ? nombrePaciente.split(' ')[0] : 'Patient'}: `;
+        if(actGrasa < iniGrasa) {
+            msg += `You have reduced your body fat by ${(iniGrasa - actGrasa).toFixed(1)}%. The Infra Baldan protocol is effectively stimulating cellular lipid oxidation. `;
+        } else {
+            msg += `Your metabolism is adapting. Do not skip your 2 weekly sessions to break this resistance. `; // <--- MODIFICADO DE 3 A 2 SESIONES
+        }
+
+        if(actVisc > 9) {
+            msg += `URGENT: Visceral fat (Lvl ${actVisc}) is dangerously suffocating your organs. Zero refined carbs this week is mandatory. `;
+        } else {
+            msg += `Your visceral fat is in an optimal protective range. `;
+        }
+        // console.log("AI Report:", msg); 
     }
 
     function initChart(pO, pT, dP, sR) {
