@@ -13,7 +13,8 @@
         .predicta-card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
-        #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        /* CORRECCIÓN DE CAPAS: z-index subido a 9999 para que siempre esté al frente */
+        #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 9999; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
@@ -193,7 +194,7 @@
         </div>
     </div>
 
-    <div id="historyModalPanel" class="no-print" style="z-index: 105; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+    <div id="historyModalPanel" class="no-print" style="z-index: 9999; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
         <div class="bg-white max-w-4xl w-[95vw] mx-auto mt-[5vh] rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
                 <div>
@@ -220,7 +221,6 @@
     </div>
 
 <script>
-    // URL DE CONEXIÓN CON GOOGLE SHEETS
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
@@ -279,7 +279,7 @@
             header.style.display = 'flex'; panelBt.style.display = 'flex'; btn.innerText = originalText;
             let imgData = canvas.toDataURL("image/png"), overlay = document.createElement('div');
             overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
-            overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
+            overlay.style.zIndex = '99999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
             overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
             let instruction = document.createElement('p'); instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE"; instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
             let img = document.createElement('img'); img.src = imgData; img.style.maxHeight = '80vh'; img.style.maxWidth = '95vw'; img.style.borderRadius = '15px'; img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
@@ -402,7 +402,6 @@
         if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
         let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
         
-        // MODIFICACIÓN DE LA FUNCIÓN DE IA: 3 a 2 SESIONES
         generateAI_Admin(iniGrasa, actGrasa, actViscVal, pOrig.nombre);
 
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: actAguaVal || (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: actViscVal || Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: actEdadMVal || Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: actBmrVal || 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
@@ -469,14 +468,11 @@
     }
 
     function generateAI_Admin(iniGrasa, actGrasa, actVisc, nombrePaciente) {
-        // Esta función replica la lógica de la IA, solo que está incrustada en el proceso de la Báscula.
-        // Como la báscula de momento no despliega el "AI Report" en su interfaz web (lo hace en el iPad de manera distinta), 
-        // dejamos este bloque preparado por si en el futuro decides visualizar el reporte aquí mismo.
         let msg = `Clinical analysis for ${nombrePaciente ? nombrePaciente.split(' ')[0] : 'Patient'}: `;
         if(actGrasa < iniGrasa) {
             msg += `You have reduced your body fat by ${(iniGrasa - actGrasa).toFixed(1)}%. The Infra Baldan protocol is effectively stimulating cellular lipid oxidation. `;
         } else {
-            msg += `Your metabolism is adapting. Do not skip your 2 weekly sessions to break this resistance. `; // <--- MODIFICADO DE 3 A 2 SESIONES
+            msg += `Your metabolism is adapting. Do not skip your 2 weekly sessions to break this resistance. `;
         }
 
         if(actVisc > 9) {
@@ -484,7 +480,6 @@
         } else {
             msg += `Your visceral fat is in an optimal protective range. `;
         }
-        // console.log("AI Report:", msg); 
     }
 
     function initChart(pO, pT, dP, sR) {
