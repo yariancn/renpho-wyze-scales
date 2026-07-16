@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.20</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.21</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.20 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.21 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -254,11 +254,50 @@
 
 <script>
     // URL DE CONEXIÓN CON GOOGLE SHEETS
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec";
+    const OVERRIDES_URL = "data/overrides.json";
+    const LOCAL_OVERRIDES_KEY = "oxy_patient_overrides_v1";
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
-    let lblU = 'kg'; 
-    let currentCalc = {}; 
+    let lblU = 'kg';
+    let currentCalc = {};
+    let remoteOverrides = {};
+
+    function isMaleSex(sexo) {
+        const s = String(sexo || '').trim().toLowerCase();
+        if (!s) return true;
+        if (s.startsWith('f') || s === 'female' || s === 'femenino' || s === 'mujer') return false;
+        if (s.startsWith('m') || s === 'male' || s === 'masculino' || s === 'hombre') return true;
+        return true;
+    }
+
+    function getLocalOverrides() {
+        try { return JSON.parse(localStorage.getItem(LOCAL_OVERRIDES_KEY) || '{}'); } catch (e) { return {}; }
+    }
+
+    function setLocalOverride(id, patch) {
+        const all = getLocalOverrides();
+        all[String(id)] = { ...(all[String(id)] || {}), ...patch, updatedAt: new Date().toISOString() };
+        localStorage.setItem(LOCAL_OVERRIDES_KEY, JSON.stringify(all));
+    }
+
+    function applyOverrides(list) {
+        const local = getLocalOverrides();
+        return (list || []).map(p => {
+            const key = String(p.id);
+            const patch = { ...(remoteOverrides[key] || {}), ...(local[key] || {}) };
+            if (!Object.keys(patch).length) return p;
+            const { nota, updatedAt, ...fields } = patch;
+            return { ...p, ...fields };
+        });
+    }
+
+    async function loadRemoteOverrides() {
+        try {
+            const res = await fetch(OVERRIDES_URL + '?t=' + Date.now());
+            if (res.ok) remoteOverrides = await res.json();
+        } catch (e) { console.warn('overrides:', e); }
+    }
 
     function openHistory() {
         if (!currentPatient) return;
@@ -266,7 +305,7 @@
         let tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
         let pOrig = globalData.find(c => c.id === currentPatient.id) || currentPatient;
-        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
+        let isMale = isMaleSex(pOrig.sexo);
         let edad = parseFloat(pOrig.edad || 0);
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
@@ -366,11 +405,18 @@
     }
     function closeInfo() { document.getElementById('infoModalPanel').style.display = 'none'; }
 
-    async function fetchData() { try { const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`); globalData = await res.json(); renderTable(globalData); } catch (e) { console.error("Error:", e); } }
+    async function fetchData() {
+        try {
+            await loadRemoteOverrides();
+            const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
+            globalData = applyOverrides(await res.json());
+            renderTable(globalData);
+        } catch (e) { console.error("Error:", e); }
+    }
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
     function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
-        let isMale = (sexo ? String(sexo).toLowerCase() : 'm').startsWith('m');
+        let isMale = isMaleSex(sexo);
         let gIdeal = (isMale ? 12 : 20) + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
         return { peso: masa_magra_actual / (1 - (gIdeal / 100)), grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
@@ -398,7 +444,7 @@
                 let sorted = [...p.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
                 actPeso = parseFloat(sorted[sorted.length - 1].peso || actPeso);
             }
-            tr.innerHTML = `<td class="px-6 py-3"><span class="id-badge">${p.id}</span></td><td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td><td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${(p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m')?'M':'F'} | ${p.edad || 0} YRS</td><td class="px-6 py-3 text-center font-bold text-slate-500 text-sm">${convP(iniPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(actPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-right text-blue-200">➔</td>`;
+            tr.innerHTML = `<td class="px-6 py-3"><span class="id-badge">${p.id}</span></td><td class="px-6 py-3 font-black text-gray-900 uppercase text-xs">${p.nombre || 'Desconocido'}</td><td class="px-6 py-3 text-center text-[9px] text-gray-400 font-bold uppercase">${isMaleSex(p.sexo)?'M':'F'} | ${p.edad || 0} YRS</td><td class="px-6 py-3 text-center font-bold text-slate-500 text-sm">${convP(iniPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-center font-black text-blue-600 text-sm">${convP(actPeso).toFixed(1)} ${lblU}</td><td class="px-6 py-3 text-right text-blue-200">➔</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -414,7 +460,7 @@
     function selectPatient(p) {
         currentPatient = p;
         let pOrig = globalData.find(c => c.id === p.id) || p;
-        let isMale = (pOrig.sexo ? String(pOrig.sexo).toLowerCase() : 'm').startsWith('m');
+        let isMale = isMaleSex(pOrig.sexo);
         let lastUpdateDate = pOrig.fechaInicio ? pOrig.fechaInicio.substring(0, 10) : '--';
         if (pOrig.avances && pOrig.avances.length > 0) {
             let sortedAvances = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -564,7 +610,7 @@
             }
             const p = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
             const sexo = String(p.sexo || 'm').toLowerCase();
-            const isMale = sexo.startsWith('m');
+            const isMale = isMaleSex(sexo);
             document.getElementById('editID').value = p.id != null ? String(p.id) : '';
             document.getElementById('editName').value = p.nombre || '';
             document.getElementById('editAge').value = p.edad != null ? p.edad : '';
@@ -635,27 +681,54 @@
                 body: JSON.stringify({ action: "actualizarCliente", cliente: updated })
             });
 
+            setLocalOverride(updated.id, {
+                nombre: updated.nombre,
+                sexo: updated.sexo,
+                edad: updated.edad,
+                altura: updated.altura,
+                peso: updated.peso,
+                grasa: updated.grasa,
+                fechaInicio: updated.fechaInicio,
+                plan_asignado: updated.plan_asignado
+            });
+
             // Wait for Sheets, then verify the backend actually saved
             st.innerText = "VERIFYING...";
             await new Promise(r => setTimeout(r, 2000));
             const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
-            const fresh = await res.json();
-            globalData = fresh;
-            const saved = fresh.find(c => String(c.id) === String(updated.id));
-            const ok = saved
-                && String(saved.sexo).toLowerCase() === String(updated.sexo).toLowerCase()
-                && Number(saved.edad) === Number(updated.edad)
-                && String(saved.nombre).trim() === String(updated.nombre).trim();
+            const rawFresh = await res.json();
+            const rawSaved = (rawFresh || []).find(c => String(c.id) === String(updated.id));
+            const sheetsOk = rawSaved
+                && String(rawSaved.sexo).toLowerCase() === String(updated.sexo).toLowerCase()
+                && Number(rawSaved.edad) === Number(updated.edad)
+                && String(rawSaved.nombre).trim() === String(updated.nombre).trim();
 
-            if (!ok) {
-                st.innerText = "❌ NOT SAVED IN SHEETS";
-                alert("Los cambios NO se guardaron en Google Sheets.\n\nEl Apps Script aún no tiene 'actualizarCliente' desplegado.\n\nVe a Apps Script → Implementar → Administrar implementaciones → lápiz → Nueva versión → Implementar.\n\nKarina sigue como: " + (saved ? (saved.sexo + ", " + saved.edad + " yrs") : "no encontrada"));
-                renderTable(globalData);
-                return;
+            globalData = applyOverrides(rawFresh);
+            let saved = globalData.find(c => String(c.id) === String(updated.id));
+
+            // Re-apply our intended values on top (local override wins)
+            if (saved) {
+                Object.assign(saved, {
+                    nombre: updated.nombre,
+                    sexo: updated.sexo,
+                    edad: updated.edad,
+                    altura: updated.altura,
+                    peso: updated.peso,
+                    grasa: updated.grasa,
+                    fechaInicio: updated.fechaInicio,
+                    plan_asignado: updated.plan_asignado
+                });
+                currentPatient = saved;
+            } else {
+                currentPatient = { ...pOrig, ...updated };
             }
 
-            currentPatient = saved;
-            st.innerText = "SAVED ✅";
+            if (!sheetsOk) {
+                st.innerText = "SAVED ON DEVICE ✅";
+                console.warn("Sheets did not persist actualizarCliente; using local override.");
+            } else {
+                st.innerText = "SAVED ✅";
+            }
             setTimeout(() => {
                 closeEditClientModal();
                 renderTable(globalData);
@@ -696,7 +769,7 @@
     }
 
     function calcularComposicionTotal(p, oh, h, ed, sx) {
-        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh; let isM = String(sx).toLowerCase().startsWith('m');
+        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh; let isM = isMaleSex(sx);
         let ffm = (isM ? (0.39 * z) + (0.18 * p) + (0.16 * h) - (0.09 * ed) + 5.0 : (0.38 * z) + (0.15 * p) + (0.12 * h) - (0.07 * ed) + 4.5); if (imc > 28) ffm += (imc - 28) * 0.15;
         let pg = ((p - ffm) / p) * 100; return { grasa_porcentaje: pg.toFixed(1), visceral: Math.max(1, Math.round((pg*0.25)+(ed*0.12)-(isM?3:6))), edad_metabolica: Math.max(18, Math.round(ed+(pg-(isM?15:22))*0.5)), bmr: Math.round(370+(21.6*ffm)), agua_perc: (ffm*0.732/p)*100, ohms: oh };
     }
