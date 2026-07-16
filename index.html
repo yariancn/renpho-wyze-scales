@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.21</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.22</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.21 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.22 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -310,7 +310,7 @@
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
-        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa);
         let html = `<tr class="bg-emerald-50 border-b-2 border-emerald-100"><td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">${metas.grasa_perc.toFixed(1)}%</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.magra * 0.56).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">≤ ${edad} y</td></tr>`;
         let log = [];
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
@@ -415,11 +415,36 @@
     }
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
-    function calcularMetasIdeales(edad, sexo, masa_magra_actual) {
+    function calcularMetasIdeales(edad, sexo, masa_magra_actual, pesoRef, grasaRef) {
         let isMale = isMaleSex(sexo);
+        // Reference body-fat % by sex/age
         let gIdeal = (isMale ? 12 : 20) + (Math.max(0, edad - 20) * 0.15);
-        gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30)); 
-        return { peso: masa_magra_actual / (1 - (gIdeal / 100)), grasa_perc: gIdeal, magra: masa_magra_actual, agua_perc: isMale ? 60 : 55, imc: isMale ? 22.5 : 21.5 };
+        gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30));
+
+        // Weight if we kept all lean mass and only adjusted fat % to target
+        let pesoPorGrasa = masa_magra_actual / (1 - (gIdeal / 100));
+        let pesoRefN = parseFloat(pesoRef);
+        let grasaRefN = parseFloat(grasaRef);
+
+        let pesoIdeal = pesoPorGrasa;
+        let gTarget = gIdeal;
+
+        // Fat-loss clinic rule: NEVER prescribe gaining weight as the "ideal"
+        if (!isNaN(grasaRefN) && grasaRefN <= gIdeal) {
+            // Already at/below target fat → maintain current/start weight
+            pesoIdeal = !isNaN(pesoRefN) ? pesoRefN : pesoPorGrasa;
+            gTarget = grasaRefN;
+        } else if (!isNaN(pesoRefN)) {
+            pesoIdeal = Math.min(pesoPorGrasa, pesoRefN);
+        }
+
+        return {
+            peso: pesoIdeal,
+            grasa_perc: gTarget,
+            magra: masa_magra_actual,
+            agua_perc: isMale ? 60 : 55,
+            imc: isMale ? 22.5 : 21.5
+        };
     }
     function renderDiff(act, ini, isLowerBetter, suffix) {
         if(isNaN(act) || isNaN(ini) || ini === 0) return `<span class="text-gray-300">--</span>`;
@@ -479,7 +504,7 @@
             if(last.predicta_data) { actViscVal = last.predicta_data.visceral || actViscVal; actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal; actBmrVal = last.predicta_data.bmr || actBmrVal; actAguaVal = last.predicta_data.agua_perc || actAguaVal; }
         }
         if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
-        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
+        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa);
         
         // MODIFICACIÓN DE LA FUNCIÓN DE IA: 3 a 2 SESIONES
         generateAI_Admin(iniGrasa, actGrasa, actViscVal, pOrig.nombre);
