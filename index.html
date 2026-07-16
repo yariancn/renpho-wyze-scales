@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.19</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.20</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.19 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.20 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -612,39 +612,58 @@
         const baselineChanged = Math.abs(parseFloat(pOrig.peso || 0) - newPeso) > 0.05 || Math.abs(parseFloat(pOrig.grasa || 0) - newGrasa) > 0.05;
         if (baselineChanged && !confirm("Day 1 weight/fat will change. This recalculates progress for all sessions. Continue?")) return;
 
+        const rawId = document.getElementById('editID').value.trim();
         const updated = {
-            id: document.getElementById('editID').value,
+            id: /^\d+$/.test(rawId) ? Number(rawId) : rawId,
             nombre: document.getElementById('editName').value.trim(),
             sexo: document.getElementById('editGender').value === 'Male' ? 'Masculino' : 'Femenino',
-            edad: document.getElementById('editAge').value,
-            altura: document.getElementById('editHeight').value,
+            edad: Number(document.getElementById('editAge').value),
+            altura: Number(document.getElementById('editHeight').value),
             peso: newPeso,
             grasa: newGrasa,
             fechaInicio: document.getElementById('editStartDate').value || (pOrig.fechaInicio ? String(pOrig.fechaInicio).substring(0, 10) : new Date().toISOString().split('T')[0]),
-            plan_asignado: document.getElementById('editPlan').value,
-            avances: pOrig.avances || []
+            plan_asignado: document.getElementById('editPlan').value
         };
 
         const st = document.getElementById('editStatus');
         st.innerText = "SAVING...";
         try {
-            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "actualizarCliente", cliente: updated }) });
-            const idx = globalData.findIndex(c => String(c.id) === String(updated.id));
-            if (idx >= 0) {
-                globalData[idx] = { ...globalData[idx], ...updated, avances: globalData[idx].avances || updated.avances || [] };
-                currentPatient = globalData[idx];
-            } else {
-                currentPatient = { ...pOrig, ...updated };
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "actualizarCliente", cliente: updated })
+            });
+
+            // Wait for Sheets, then verify the backend actually saved
+            st.innerText = "VERIFYING...";
+            await new Promise(r => setTimeout(r, 2000));
+            const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
+            const fresh = await res.json();
+            globalData = fresh;
+            const saved = fresh.find(c => String(c.id) === String(updated.id));
+            const ok = saved
+                && String(saved.sexo).toLowerCase() === String(updated.sexo).toLowerCase()
+                && Number(saved.edad) === Number(updated.edad)
+                && String(saved.nombre).trim() === String(updated.nombre).trim();
+
+            if (!ok) {
+                st.innerText = "❌ NOT SAVED IN SHEETS";
+                alert("Los cambios NO se guardaron en Google Sheets.\n\nEl Apps Script aún no tiene 'actualizarCliente' desplegado.\n\nVe a Apps Script → Implementar → Administrar implementaciones → lápiz → Nueva versión → Implementar.\n\nKarina sigue como: " + (saved ? (saved.sexo + ", " + saved.edad + " yrs") : "no encontrada"));
+                renderTable(globalData);
+                return;
             }
+
+            currentPatient = saved;
             st.innerText = "SAVED ✅";
             setTimeout(() => {
                 closeEditClientModal();
                 renderTable(globalData);
                 selectPatient(currentPatient);
-                fetchData();
-            }, 800);
+            }, 600);
         } catch (e) {
             st.innerText = "❌ ERROR";
+            alert("Error al guardar: " + e.message);
         }
     }
 
