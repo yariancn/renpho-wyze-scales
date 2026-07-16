@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.17</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.18</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -13,7 +13,8 @@
         .predicta-card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
-        #modalDetalle, #modalNuevo, #modalEditar, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        #modalEditar { z-index: 120; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
@@ -44,7 +45,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.17 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.18 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -157,8 +158,9 @@
                             <p id="yearsRegained" class="text-base font-black italic leading-none mt-1">--</p>
                         </div>
                         <div class="bg-blue-600 text-white px-4 py-2 rounded-[12px] shadow-lg text-center">
-                            <p class="text-[7px] uppercase font-bold italic opacity-80 tracking-widest">BALDAN GOAL: <span id="progDateText">--</span></p>
+                            <p class="text-[7px] uppercase font-bold italic opacity-80 tracking-widest">ETA GOAL: <span id="progDateText">--</span></p>
                             <p id="prognosisSessions" class="text-base font-black italic leading-none mt-1">--</p>
+                            <p id="prognosisDone" class="text-[8px] font-bold uppercase tracking-widest opacity-90 mt-1">--</p>
                         </div>
                     </div>
                 </header>
@@ -493,9 +495,20 @@
         let badge = document.getElementById('rejuvenationBadge');
         if (!isNaN(ageDiff) && ageDiff > 0) { badge.style.display = 'block'; document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`; } else { badge.style.display = 'none'; }
         
+        // S1 = Day 1 registration; each avance = next session
+        let sessionsDone = 1 + ((pOrig.avances && pOrig.avances.length) ? pOrig.avances.length : 0);
+        document.getElementById('prognosisDone').innerText = `DONE: ${sessionsDone} SESSION${sessionsDone === 1 ? '' : 'S'}`;
+
+        // Remaining estimate: ~2 lb/week loss, 2 sessions/week (NOT sessions already completed)
         let sPM = Math.max(0, difPesoGoal) / (2 * 0.453592);
-        if(sPM <= 0) { document.getElementById('progDateText').innerText = "TODAY"; document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅"; } else {
-            let fM = new Date(); fM.setDate(fM.getDate() + (sPM * 7)); document.getElementById('progDateText').innerText = fM.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase(); document.getElementById('prognosisSessions').innerText = `${Math.ceil(sPM * 2)} SESSIONS | ${Math.ceil(sPM)} WEEKS`;
+        if (sPM <= 0) {
+            document.getElementById('progDateText').innerText = "TODAY";
+            document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
+        } else {
+            let fM = new Date();
+            fM.setDate(fM.getDate() + (sPM * 7));
+            document.getElementById('progDateText').innerText = fM.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('prognosisSessions').innerText = `~${Math.ceil(sPM * 2)} LEFT | ${Math.ceil(sPM)} WK`;
         }
         document.getElementById('modalDetalle').style.display = 'block';
         initChart(pOrig, p, actPeso - metas.peso, sPM);
