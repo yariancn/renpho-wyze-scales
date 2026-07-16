@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.23</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.24</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.23 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.24 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -233,6 +233,7 @@
                             </thead>
                             <tbody>
                                 <tr><td>Total Weight <span class="info-btn no-print" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoIni" class="text-center font-medium text-slate-400">--</td><td id="tPesoAct" class="text-center font-black">--</td><td id="tPesoPrg" class="text-center">--</td><td id="tPesoId" class="text-center val-ideal">--</td><td id="tPesoEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Fat Mass (kg) <span class="info-btn no-print" onclick="showInfo('fatmass')">ⓘ</span></td><td id="tFatKgIni" class="text-center font-medium text-slate-400">--</td><td id="tFatKgAct" class="text-center font-black">--</td><td id="tFatKgPrg" class="text-center">--</td><td id="tFatKgId" class="text-center val-ideal">--</td><td id="tFatKgEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Body Fat % <span class="info-btn no-print" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaIni" class="text-center font-medium text-slate-400">--</td><td id="tGrasaAct" class="text-center font-black">--</td><td id="tGrasaPrg" class="text-center">--</td><td id="tGrasaId" class="text-center val-ideal">--</td><td id="tGrasaEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Lean Mass (Base) <span class="info-btn no-print" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraIni" class="text-center font-medium text-slate-400">--</td><td id="tMagraAct" class="text-center font-black">--</td><td id="tMagraPrg" class="text-center">--</td><td id="tMagraId" class="text-center val-ideal">--</td><td id="tMagraEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Skeletal Muscle <span class="info-btn no-print" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscIni" class="text-center font-medium text-slate-400">--</td><td id="tMuscAct" class="text-center font-black">--</td><td id="tMuscPrg" class="text-center">--</td><td id="tMuscId" class="text-center val-ideal">--</td><td id="tMuscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
@@ -246,15 +247,52 @@
                     </div>
                 </div>
 
+                <div id="clinicalAlerts" class="mb-3 hidden"></div>
+                <div id="valueExtras" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <div class="bg-slate-900 text-white rounded-xl p-3 text-center">
+                        <p class="text-[8px] uppercase font-bold text-slate-400 tracking-widest">Goal Progress</p>
+                        <p id="valGoalPct" class="text-lg font-black mt-1">--</p>
+                    </div>
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-center">
+                        <p class="text-[8px] uppercase font-bold text-indigo-400 tracking-widest">Composition Score</p>
+                        <p id="valCompScore" class="text-lg font-black text-indigo-700 mt-1">--</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
+                        <p class="text-[8px] uppercase font-bold text-emerald-500 tracking-widest">Real Pace</p>
+                        <p id="valRealPace" class="text-lg font-black text-emerald-700 mt-1">--</p>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
+                        <p class="text-[8px] uppercase font-bold text-amber-500 tracking-widest">Adherence</p>
+                        <p id="valAdhere" class="text-lg font-black text-amber-700 mt-1">--</p>
+                    </div>
+                </div>
+
+                <div id="scanBriefing" class="hidden mb-3 rounded-2xl border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-white p-4 shadow-lg">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Live weigh-in briefing</p>
+                            <h3 class="text-lg font-black italic uppercase text-slate-900">Talk with the patient now</h3>
+                        </div>
+                        <span id="scanBriefBadge" class="text-[10px] font-black uppercase px-3 py-1 rounded-full bg-blue-600 text-white">SCAN</span>
+                    </div>
+                    <div id="scanDeltaGrid" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+                    <div id="scanMetricGrid" class="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3"></div>
+                    <div class="bg-slate-900 text-white rounded-xl p-3">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-blue-300 mb-1">Say this</p>
+                        <p id="scanTalkingPoints" class="text-sm font-medium leading-relaxed"></p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <div class="lg:col-span-1 bg-slate-50 p-4 rounded-[16px] border border-slate-200 no-print flex flex-col justify-center" id="panelBluetooth">
                         <h3 class="text-[9px] font-black text-slate-400 uppercase mb-2 italic tracking-widest text-center">BLUETOOTH CAPTURE</h3>
                         <div class="flex flex-col gap-2">
                             <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-blue-200 hover:bg-blue-800 transition w-full">📶 START SCAN</button>
-                            <div class="flex gap-2">
-                                <input type="number" id="sessWeight" class="input-titan text-center text-sm text-blue-600 p-2" placeholder="Weight">
-                                <input type="number" id="sessFat" class="input-titan text-center text-sm text-emerald-600 p-2" placeholder="Fat %">
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Weight kg</span><input type="number" id="sessWeight" class="input-titan text-center text-sm text-blue-600 p-2" placeholder="kg" step="0.1"></label>
+                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Fat %</span><input type="number" id="sessFat" class="input-titan text-center text-sm text-emerald-600 p-2" placeholder="%" step="0.1"></label>
                             </div>
+                            <button type="button" onclick="previewSessionBriefing()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase w-full">👁 PREVIEW BRIEFING</button>
                             <button onclick="addSession()" class="titan-btn px-3 py-2 rounded-lg text-[9px] uppercase bg-slate-900 w-full mt-1">SAVE PROGRESS</button>
                         </div>
                         <p id="btStatusSeg" class="text-[8px] font-mono text-emerald-600 mt-2 text-center uppercase tracking-widest h-3 font-bold"></p>
@@ -421,6 +459,10 @@
             title = "TOTAL WEIGHT"; let diff = c.pesoAct - c.pesoId;
             desc = `<b>Your Status:</b> Target fixed at <b>${convP(c.pesoId).toFixed(1)} ${u}</b>. ${diff > 0 ? `Surplus of <b>${convP(diff).toFixed(1)} ${u}</b>.` : `At or below target.`}`;
             why = diff > 0 ? `Reduces internal inflammation and cardiovascular risk.` : `Maintains efficiency and joint health.`;
+        } else if(metricId === 'fatmass') {
+            title = "FAT MASS (KG)";
+            desc = `<b>Your Status:</b> Absolute fat tissue in kilograms — clearer than % alone when weight moves.`;
+            why = "Losing fat kg while protecting lean mass is the true clinical win.";
         } else if(metricId === 'fat') {
             title = "BODY FAT %";
             desc = `<b>Your Status:</b> Currently <b>${c.grasaAct.toFixed(1)}%</b>. Target is <b>${c.grasaId.toFixed(1)}%</b>.`;
@@ -475,6 +517,194 @@
         if (bmi < 25) return { label: 'NORMAL', color: 'text-emerald-600' };
         if (bmi < 30) return { label: 'OVERWEIGHT', color: 'text-orange-500' };
         return { label: 'OBESE', color: 'text-red-600' };
+    }
+
+    function fmtDelta(curr, prev, lowerBetter, digits) {
+        if (isNaN(curr) || isNaN(prev)) return { text: '--', cls: 'text-slate-400' };
+        const d = curr - prev;
+        if (Math.abs(d) < 0.05) return { text: '0.0', cls: 'text-slate-500' };
+        const good = lowerBetter ? d < 0 : d > 0;
+        return { text: (d > 0 ? '+' : '') + d.toFixed(digits == null ? 1 : digits), cls: good ? 'text-emerald-600' : 'text-orange-500' };
+    }
+
+    function buildTalkingPoints(ctx) {
+        const lines = [];
+        const { dW, dF, dLean, dVisc, bmi, visc, water, name } = ctx;
+        const first = (name || 'Patient').split(' ')[0];
+        if (dW <= -0.3) lines.push(`${first}, you dropped ${Math.abs(dW).toFixed(1)} kg since last weigh-in.`);
+        else if (dW >= 0.3) lines.push(`Weight is up ${dW.toFixed(1)} kg vs last session — let's check water, salt, and timing.`);
+        else lines.push(`Weight is stable vs last session — we'll look at composition quality.`);
+
+        if (dF <= -0.3) lines.push(`Body fat improved ${Math.abs(dF).toFixed(1)} points — that's real fat oxidation.`);
+        else if (dF >= 0.3) lines.push(`Fat % rose ${dF.toFixed(1)} — prioritize protein and session consistency.`);
+
+        if (dLean <= -0.4) lines.push(`Lean mass dipped — protect muscle: protein + don't skip sessions.`);
+        else if (dLean >= 0.3) lines.push(`Lean mass held or improved — excellent for metabolism.`);
+
+        if (visc > 9) lines.push(`Visceral fat is elevated (lvl ${visc}) — this is the priority talking point today.`);
+        else if (dVisc < 0) lines.push(`Visceral trend is improving — keep the protocol going.`);
+
+        if (bmi >= 25) lines.push(`BMI is still in overweight range — height-based goal remains the north star.`);
+        if (water && water < 50) lines.push(`Hydration looks low — push water before the next session.`);
+
+        return lines.slice(0, 4).join(' ');
+    }
+
+    function renderScanBriefing(pOrig, scan) {
+        const panel = document.getElementById('scanBriefing');
+        if (!panel) return;
+        const prev = getLastMeasurement(pOrig);
+        const w = parseFloat(scan.peso);
+        const f = parseFloat(scan.grasa);
+        const lean = w * (1 - f / 100);
+        const fatKg = w * (f / 100);
+        const prevW = prev.peso, prevF = prev.grasa, prevLean = prevW * (1 - prevF / 100);
+        const visc = scan.visceral != null ? scan.visceral : (scan.predicta_data && scan.predicta_data.visceral);
+        const water = scan.agua_perc != null ? scan.agua_perc : (scan.predicta_data && scan.predicta_data.agua_perc);
+        const bmr = scan.bmr != null ? scan.bmr : (scan.predicta_data && scan.predicta_data.bmr);
+        const edadM = scan.edad_metabolica != null ? scan.edad_metabolica : (scan.predicta_data && scan.predicta_data.edad_metabolica);
+        const altura = parseFloat(pOrig.altura || 0);
+        const bmi = altura ? w / Math.pow(altura / 100, 2) : NaN;
+        const prevVisc = prev.visceral;
+
+        const dW = w - prevW, dF = f - prevF, dLean = lean - prevLean;
+        const dVisc = (visc != null && prevVisc != null) ? (visc - prevVisc) : 0;
+
+        const deltas = [
+            { l: 'Δ Weight', ...fmtDelta(w, prevW, true), u: 'kg' },
+            { l: 'Δ Fat %', ...fmtDelta(f, prevF, true), u: '%' },
+            { l: 'Δ Lean', ...fmtDelta(lean, prevLean, false), u: 'kg' },
+            { l: 'Δ Fat kg', ...fmtDelta(fatKg, prevW * (prevF / 100), true), u: 'kg' }
+        ];
+        document.getElementById('scanDeltaGrid').innerHTML = deltas.map(d => `
+            <div class="bg-white rounded-xl border border-blue-100 p-3 text-center">
+                <p class="text-[8px] font-black uppercase text-slate-400 tracking-widest">${d.l}</p>
+                <p class="text-xl font-black ${d.cls} mt-1">${d.text}<span class="text-[10px] ml-0.5">${d.u}</span></p>
+            </div>`).join('');
+
+        const metrics = [
+            { l: 'Weight', v: w.toFixed(1) + ' kg' },
+            { l: 'Fat %', v: f.toFixed(1) + '%' },
+            { l: 'Fat kg', v: fatKg.toFixed(1) },
+            { l: 'Lean', v: lean.toFixed(1) + ' kg' },
+            { l: 'BMI', v: isNaN(bmi) ? '--' : bmi.toFixed(1) },
+            { l: 'Visceral', v: visc != null ? visc : '--' },
+            { l: 'Water', v: water != null ? Number(water).toFixed(1) + '%' : '--' },
+            { l: 'BMR', v: bmr != null ? Math.round(bmr) : '--' },
+            { l: 'Bio-Age', v: edadM != null ? edadM : '--' },
+            { l: 'Muscle', v: (lean * 0.56).toFixed(1) + ' kg' },
+            { l: 'Height', v: (pOrig.altura || '--') + ' cm' },
+            { l: 'Sex', v: isMaleSex(pOrig.sexo) ? 'M' : 'F' }
+        ];
+        document.getElementById('scanMetricGrid').innerHTML = metrics.map(m => `
+            <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                <p class="text-[7px] font-black uppercase text-slate-400">${m.l}</p>
+                <p class="text-sm font-black text-slate-800 mt-0.5">${m.v}</p>
+            </div>`).join('');
+
+        document.getElementById('scanTalkingPoints').innerText = buildTalkingPoints({
+            dW, dF, dLean, dVisc, bmi, visc, water, name: pOrig.nombre
+        });
+        const badge = document.getElementById('scanBriefBadge');
+        if (dW < -0.2 && dF <= 0) { badge.innerText = 'STRONG SESSION'; badge.className = 'text-[10px] font-black uppercase px-3 py-1 rounded-full bg-emerald-600 text-white'; }
+        else if (dLean < -0.4) { badge.innerText = 'PROTECT MUSCLE'; badge.className = 'text-[10px] font-black uppercase px-3 py-1 rounded-full bg-orange-500 text-white'; }
+        else { badge.innerText = 'REVIEW LIVE'; badge.className = 'text-[10px] font-black uppercase px-3 py-1 rounded-full bg-blue-600 text-white'; }
+
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function getLastMeasurement(pOrig) {
+        let peso = parseFloat(pOrig.peso || 0), grasa = parseFloat(pOrig.grasa || 0);
+        let visceral = pOrig.grasa_visceral, agua = pOrig.agua_corporal_perc, fecha = pOrig.fechaInicio;
+        if (pOrig.avances && pOrig.avances.length) {
+            const sorted = [...pOrig.avances].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            const last = sorted[sorted.length - 1];
+            peso = parseFloat(last.peso || peso);
+            grasa = parseFloat(last.grasa || grasa);
+            if (last.predicta_data) {
+                visceral = last.predicta_data.visceral != null ? last.predicta_data.visceral : visceral;
+                agua = last.predicta_data.agua_perc != null ? last.predicta_data.agua_perc : agua;
+            } else {
+                visceral = last.grasa_visceral != null ? last.grasa_visceral : visceral;
+                agua = last.agua_corporal_perc != null ? last.agua_corporal_perc : agua;
+            }
+            fecha = last.fecha;
+        }
+        return { peso, grasa, visceral, agua, fecha };
+    }
+
+    function renderClinicalExtras(pOrig, iniPeso, iniGrasa, actPeso, actGrasa, actFfm, iniFfm, metas, actVisc, actAgua, altura) {
+        const fatIni = iniPeso * (iniGrasa / 100), fatAct = actPeso * (actGrasa / 100);
+        const fatId = metas.peso * (metas.grasa_perc / 100);
+        document.getElementById('tFatKgIni').innerText = convP(fatIni).toFixed(1);
+        document.getElementById('tFatKgAct').innerText = convP(fatAct).toFixed(1) + ' ' + lblU;
+        document.getElementById('tFatKgAct').className = fatAct > fatId ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tFatKgPrg').innerHTML = renderDiff(convP(fatAct), convP(fatIni), true, lblU);
+        document.getElementById('tFatKgId').innerText = convP(fatId).toFixed(1) + ' ' + lblU;
+        document.getElementById('tFatKgEst').innerText = fatAct <= fatId ? 'ON TRACK' : 'REDUCE FAT KG';
+        document.getElementById('tFatKgEst').className = fatAct <= fatId ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        // Water / visceral status
+        const aguaId = metas.agua_perc;
+        document.getElementById('tAguaPrg').innerHTML = renderDiff(parseFloat(actAgua) || 0, parseFloat(pOrig.agua_corporal_perc) || parseFloat(actAgua) || 0, false, '%');
+        document.getElementById('tAguaEst').innerText = (parseFloat(actAgua) || 0) >= aguaId ? 'HYDRATED' : 'LOW WATER';
+        document.getElementById('tAguaEst').className = (parseFloat(actAgua) || 0) >= aguaId ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+        document.getElementById('tViscId').innerText = '≤ 9';
+        document.getElementById('tViscEst').innerText = actVisc > 9 ? 'HIGH RISK' : 'SAFE';
+        document.getElementById('tViscEst').className = actVisc > 9 ? 'text-right text-[9px] uppercase font-bold text-red-600' : 'text-right text-[9px] uppercase font-bold text-emerald-600';
+        document.getElementById('tViscPrg').innerHTML = renderDiffInt(actVisc, parseFloat(pOrig.grasa_visceral) || actVisc, true, '');
+
+        // Goal %
+        const need = Math.max(0.01, iniPeso - metas.peso);
+        const done = Math.max(0, iniPeso - actPeso);
+        const pct = Math.min(100, Math.round((done / need) * 100));
+        document.getElementById('valGoalPct').innerText = (actPeso <= metas.peso) ? '100%' : pct + '%';
+
+        // Composition score: fat lost vs lean lost (higher = better quality loss)
+        const fatLost = fatIni - fatAct;
+        const leanLost = iniFfm - actFfm;
+        let score = '--';
+        if (Math.abs(fatLost) + Math.abs(leanLost) > 0.2) {
+            const raw = fatLost - (leanLost > 0 ? leanLost * 1.5 : leanLost * 0.5);
+            score = Math.max(0, Math.min(100, Math.round(50 + raw * 15))) + '';
+        }
+        document.getElementById('valCompScore').innerText = score;
+
+        // Real pace kg/week
+        const startD = new Date(pOrig.fechaInicio || Date.now());
+        const weeks = Math.max(1 / 7, (Date.now() - startD.getTime()) / (7 * 86400000));
+        const pace = (iniPeso - actPeso) / weeks;
+        document.getElementById('valRealPace').innerText = (pace >= 0 ? '' : '') + pace.toFixed(2) + ' kg/wk';
+
+        // Adherence: expected 2 sessions/week
+        const sessions = 1 + ((pOrig.avances && pOrig.avances.length) || 0);
+        const expected = Math.max(1, weeks * 2);
+        const adhere = Math.min(100, Math.round((sessions / expected) * 100));
+        document.getElementById('valAdhere').innerText = adhere + '%';
+
+        // Alerts
+        const alerts = [];
+        const bmi = altura ? actPeso / Math.pow(altura / 100, 2) : NaN;
+        if (bmi >= 30) alerts.push({ t: 'BMI in obese range — keep protocol intensity and nutrition compliance front and center.', c: 'bg-red-50 border-red-200 text-red-800' });
+        else if (bmi >= 25) alerts.push({ t: 'BMI overweight — progress is measured to the height-based ideal, not scale ego.', c: 'bg-orange-50 border-orange-200 text-orange-800' });
+        if (actVisc > 9) alerts.push({ t: `Visceral fat level ${actVisc} — organ risk. Cut refined carbs this week.`, c: 'bg-red-50 border-red-200 text-red-800' });
+        if (leanLost > 0.5) alerts.push({ t: 'Lean mass declining — increase protein and confirm scale hydration conditions.', c: 'bg-amber-50 border-amber-200 text-amber-900' });
+        if (pOrig.avances && pOrig.avances.length >= 2) {
+            const sorted = [...pOrig.avances].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            const a = sorted[sorted.length - 1], b = sorted[sorted.length - 2];
+            if (Math.abs(parseFloat(a.peso) - parseFloat(b.peso)) < 0.2 && Math.abs(parseFloat(a.grasa) - parseFloat(b.grasa)) < 0.2) {
+                alerts.push({ t: 'Plateau vs prior session — review diet adherence and session spacing.', c: 'bg-slate-50 border-slate-200 text-slate-700' });
+            }
+        }
+        if ((parseFloat(actAgua) || 99) < 50) alerts.push({ t: 'Body water looks low — hydration affects impedance readings and fat oxidation.', c: 'bg-blue-50 border-blue-200 text-blue-800' });
+
+        const box = document.getElementById('clinicalAlerts');
+        if (!alerts.length) { box.classList.add('hidden'); box.innerHTML = ''; }
+        else {
+            box.classList.remove('hidden');
+            box.innerHTML = alerts.map(a => `<div class="rounded-xl border px-3 py-2 mb-2 text-[11px] font-bold ${a.c}">⚠ ${a.t}</div>`).join('');
+        }
     }
 
     function updateEditBmiPreview() {
@@ -648,6 +878,23 @@
         document.getElementById('tBmrAct').innerText = Math.round(currentCalc.bmrAct);
         document.getElementById('tBmrId').innerText = Math.round(currentCalc.bmrId);
 
+        renderClinicalExtras(pOrig, iniPeso, iniGrasa, actPeso, actGrasa, actFfm, iniFfm, metas, currentCalc.viscAct, currentCalc.aguaAct, altura);
+
+        if (p.isTempScan) {
+            renderScanBriefing(pOrig, {
+                peso: actPeso,
+                grasa: actGrasa,
+                visceral: currentCalc.viscAct,
+                agua_perc: currentCalc.aguaAct,
+                bmr: currentCalc.bmrAct,
+                edad_metabolica: currentCalc.edadMAct,
+                predicta_data: p.predicta_data || datosClinicosTemporales
+            });
+        } else {
+            const sb = document.getElementById('scanBriefing');
+            if (sb) sb.classList.add('hidden');
+        }
+
         let ageDiff = parseInt(pOrig.edad_metabolica || edad) - currentCalc.edadMAct;
         let badge = document.getElementById('rejuvenationBadge');
         if (!isNaN(ageDiff) && ageDiff > 0) { badge.style.display = 'block'; document.getElementById('yearsRegained').innerText = `${ageDiff} YRS`; } else { badge.style.display = 'none'; }
@@ -656,12 +903,24 @@
         let sessionsDone = 1 + ((pOrig.avances && pOrig.avances.length) ? pOrig.avances.length : 0);
         document.getElementById('prognosisDone').innerText = `DONE: ${sessionsDone} SESSION${sessionsDone === 1 ? '' : 'S'}`;
 
-        // Remaining estimate: ~2 lb/week loss, 2 sessions/week (NOT sessions already completed)
-        let sPM = Math.max(0, difPesoGoal) / (2 * 0.453592);
-        if (sPM <= 0) {
+        // Remaining estimate: prefer real pace when available, else ~2 lb/week
+        let sPM;
+        const startD = new Date(pOrig.fechaInicio || Date.now());
+        const weeksElapsed = Math.max(0.5, (Date.now() - startD.getTime()) / (7 * 86400000));
+        const realPace = (iniPeso - actPeso) / weeksElapsed; // kg/week lost
+        if (difPesoGoal <= 0) {
             document.getElementById('progDateText').innerText = "TODAY";
             document.getElementById('prognosisSessions').innerText = "GOAL ACHIEVED ✅";
+            sPM = 0;
+        } else if (realPace > 0.05) {
+            const weeksLeft = difPesoGoal / realPace;
+            sPM = weeksLeft;
+            let fM = new Date();
+            fM.setDate(fM.getDate() + (weeksLeft * 7));
+            document.getElementById('progDateText').innerText = fM.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('prognosisSessions').innerText = `~${Math.ceil(weeksLeft * 2)} LEFT | ${Math.ceil(weeksLeft)} WK (real pace)`;
         } else {
+            sPM = Math.max(0, difPesoGoal) / (2 * 0.453592);
             let fM = new Date();
             fM.setDate(fM.getDate() + (sPM * 7));
             document.getElementById('progDateText').innerText = fM.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
@@ -853,6 +1112,23 @@
             st.innerText = "❌ ERROR";
             alert("Error al guardar: " + e.message);
         }
+    }
+
+    function previewSessionBriefing() {
+        if (!currentPatient) return;
+        const w = parseFloat(document.getElementById('sessWeight').value);
+        const f = parseFloat(document.getElementById('sessFat').value);
+        if (!w) { alert('Enter weight (kg) first.'); return; }
+        const pOrig = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
+        const pT = {
+            ...pOrig,
+            peso: w,
+            grasa: isNaN(f) ? 0 : f,
+            isTempScan: true,
+            predicta_data: Object.keys(datosClinicosTemporales || {}).length ? datosClinicosTemporales : undefined
+        };
+        selectPatient(pT);
+        document.getElementById('btStatusSeg').innerText = 'BRIEFING READY — discuss, then SAVE';
     }
 
     async function addSession() {
