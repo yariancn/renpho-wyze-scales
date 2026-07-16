@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.22</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.23</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.22 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.23 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -73,26 +73,51 @@
         <div class="modal-content max-w-2xl h-auto p-6 mt-[10vh]">
             <button onclick="closeNewClientModal()" class="absolute top-4 right-5 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
             <h2 class="text-xl font-black uppercase italic mb-4 border-l-4 border-blue-600 pl-3">New Patient Registration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <input type="text" id="newID" class="input-titan" placeholder="Patient ID (Optional)">
-                <input type="text" id="newName" class="input-titan" placeholder="Full Name">
-                <input type="number" id="newAge" class="input-titan border-blue-100" placeholder="Age (Years)">
-                <input type="number" id="newHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
-                <select id="newGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
-                <select id="newPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Patient ID (optional)</span>
+                    <input type="text" id="newID" class="input-titan" placeholder="Leave blank to auto-generate">
+                </label>
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Full name</span>
+                    <input type="text" id="newName" class="input-titan" placeholder="Name">
+                </label>
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Age (years)</span>
+                    <input type="number" id="newAge" class="input-titan border-blue-100" placeholder="e.g. 29">
+                </label>
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Height / Estatura (cm)</span>
+                    <input type="number" id="newHeight" class="input-titan border-blue-100" placeholder="e.g. 165">
+                </label>
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Sex / Sexo</span>
+                    <select id="newGender" class="input-titan font-bold text-blue-900"><option value="Male">Male / Masculino</option><option value="Female">Female / Femenino</option></select>
+                </label>
+                <label class="block">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-indigo-700 mb-1">Nutrition plan</span>
+                    <select id="newPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
                     <option value="">-- Assign Nutrition Plan --</option>
                     <option value="Ginoide">Ginoide (Pear Shape)</option>
                     <option value="Androide">Androide (Apple Shape)</option>
                     <option value="Mixto">Mixto (Mixed)</option>
                     <option value="Menopausia">Menopausia</option>
                     <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
-                </select>
+                    </select>
+                </label>
             </div>
             <div class="bg-blue-50 p-3 rounded-[16px] border border-blue-100">
-                <div class="flex gap-3 items-center">
+                <p class="text-[9px] font-black text-blue-700 uppercase tracking-widest mb-2">First measurement</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <button onclick="conectarBáscula('nuevo')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-800 transition">📶 READ SCALE</button>
-                    <input type="number" id="newWeight" class="input-titan text-center text-blue-600" placeholder="Weight">
-                    <input type="number" id="newFat" class="input-titan text-center text-emerald-600" placeholder="Fat %">
+                    <label class="block">
+                        <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Weight (kg)</span>
+                        <input type="number" id="newWeight" class="input-titan text-center text-blue-600" placeholder="kg">
+                    </label>
+                    <label class="block">
+                        <span class="block text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Body fat (%)</span>
+                        <input type="number" id="newFat" class="input-titan text-center text-emerald-600" placeholder="%">
+                    </label>
                 </div>
                 <p id="btStatusNew" class="text-[9px] font-mono text-blue-600 mt-2 text-center uppercase h-3"></p>
             </div>
@@ -106,28 +131,57 @@
                 <div class="bg-white max-w-2xl w-[95%] mx-auto my-6 p-6 rounded-2xl relative shadow-2xl">
                     <button type="button" onclick="closeEditClientModal()" class="absolute top-4 right-5 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
                     <h2 class="text-xl font-black uppercase italic mb-4 border-l-4 border-amber-500 pl-3">Edit Patient Registration</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                        <input type="text" id="editID" class="input-titan bg-slate-100 text-slate-500" placeholder="Patient ID" readonly title="ID cannot be changed">
-                        <input type="text" id="editName" class="input-titan" placeholder="Full Name">
-                        <input type="number" id="editAge" class="input-titan border-blue-100" placeholder="Age (Years)">
-                        <input type="number" id="editHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
-                        <select id="editGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
-                        <select id="editPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
+                    <p class="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-wide">Check height carefully — BMI and ideal weight depend on it.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Patient ID</span>
+                            <input type="text" id="editID" class="input-titan bg-slate-100 text-slate-500" readonly title="ID cannot be changed">
+                        </label>
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Full name</span>
+                            <input type="text" id="editName" class="input-titan" placeholder="Name">
+                        </label>
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Age (years)</span>
+                            <input type="number" id="editAge" class="input-titan border-blue-100" placeholder="e.g. 29" min="1" max="120">
+                        </label>
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Height / Estatura (cm)</span>
+                            <input type="number" id="editHeight" class="input-titan border-blue-200 ring-1 ring-blue-100" placeholder="e.g. 165" min="100" max="250" step="0.1" oninput="updateEditBmiPreview()">
+                        </label>
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Sex / Sexo</span>
+                            <select id="editGender" class="input-titan font-bold text-blue-900"><option value="Male">Male / Masculino</option><option value="Female">Female / Femenino</option></select>
+                        </label>
+                        <label class="block">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-indigo-700 mb-1">Nutrition plan</span>
+                            <select id="editPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
                             <option value="">-- Assign Nutrition Plan --</option>
                             <option value="Ginoide">Ginoide (Pear Shape)</option>
                             <option value="Androide">Androide (Apple Shape)</option>
                             <option value="Mixto">Mixto (Mixed)</option>
                             <option value="Menopausia">Menopausia</option>
                             <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
-                        </select>
-                        <input type="date" id="editStartDate" class="input-titan" title="Start date (Day 1)">
+                            </select>
+                        </label>
+                        <label class="block md:col-span-2">
+                            <span class="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Start date (Day 1)</span>
+                            <input type="date" id="editStartDate" class="input-titan">
+                        </label>
                     </div>
                     <div class="bg-amber-50 p-3 rounded-[16px] border border-amber-100 mb-3">
-                        <p class="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">Day 1 Baseline — changing this recalculates all progress</p>
-                        <div class="flex gap-3 items-center">
-                            <input type="number" id="editWeight" class="input-titan text-center text-blue-600" placeholder="Start Weight (kg)" step="0.1">
-                            <input type="number" id="editFat" class="input-titan text-center text-emerald-600" placeholder="Start Fat %" step="0.1">
+                        <p class="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">Day 1 baseline (first weigh-in) — changing this recalculates progress</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="block text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Start weight / Peso día 1 (kg)</span>
+                                <input type="number" id="editWeight" class="input-titan text-center text-blue-600" placeholder="e.g. 80.2" step="0.1" oninput="updateEditBmiPreview()">
+                            </label>
+                            <label class="block">
+                                <span class="block text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Start body fat / Grasa día 1 (%)</span>
+                                <input type="number" id="editFat" class="input-titan text-center text-emerald-600" placeholder="e.g. 14.6" step="0.1">
+                            </label>
                         </div>
+                        <p id="editBmiPreview" class="text-[11px] font-black text-center mt-3 uppercase tracking-wide text-slate-600">BMI preview: --</p>
                     </div>
                     <p id="editStatus" class="text-[9px] font-mono text-amber-700 mt-1 text-center uppercase h-3"></p>
                     <button type="button" onclick="saveEditClient()" class="w-full titan-btn py-3 rounded-xl mt-2 uppercase text-[10px] tracking-widest bg-amber-600 hover:bg-amber-700">SAVE CHANGES</button>
@@ -310,7 +364,7 @@
         let iniPeso = parseFloat(pOrig.peso || 0);
         let iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
-        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa);
+        let metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa, pOrig.altura);
         let html = `<tr class="bg-emerald-50 border-b-2 border-emerald-100"><td class="py-4 px-4 font-black text-emerald-700 italic">🎯 CLINICAL TARGET</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.peso).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">${metas.grasa_perc.toFixed(1)}%</td><td class="text-center py-4 font-black text-emerald-600">${convP(metas.magra * 0.56).toFixed(1)} <span class="text-[9px]">${lblU}</span></td><td class="text-center py-4 font-black text-emerald-600">≤ ${edad} y</td></tr>`;
         let log = [];
         let iniEdadM = Math.max(18, Math.round(pOrig.edad_metabolica || (edad + (iniGrasa - (isMale?15:22)) * 0.5)));
@@ -415,23 +469,52 @@
     }
     function convP(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) * 2.20462) : parseFloat(val)); }
     function convA(val) { return (!val || isNaN(val)) ? 0 : (unitMode === 'LB' ? (parseFloat(val) / 2.54).toFixed(1) + " IN" : parseFloat(val).toFixed(0) + " CM"); }
-    function calcularMetasIdeales(edad, sexo, masa_magra_actual, pesoRef, grasaRef) {
+    function bmiCategory(bmi) {
+        if (isNaN(bmi) || bmi <= 0) return { label: '--', color: 'text-slate-400' };
+        if (bmi < 18.5) return { label: 'UNDERWEIGHT', color: 'text-orange-500' };
+        if (bmi < 25) return { label: 'NORMAL', color: 'text-emerald-600' };
+        if (bmi < 30) return { label: 'OVERWEIGHT', color: 'text-orange-500' };
+        return { label: 'OBESE', color: 'text-red-600' };
+    }
+
+    function updateEditBmiPreview() {
+        const el = document.getElementById('editBmiPreview');
+        if (!el) return;
+        const h = parseFloat(document.getElementById('editHeight').value);
+        const w = parseFloat(document.getElementById('editWeight').value);
+        if (!h || !w || h < 100) {
+            el.innerText = 'BMI preview: enter height (cm) + start weight (kg)';
+            el.className = 'text-[11px] font-black text-center mt-3 uppercase tracking-wide text-slate-500';
+            return;
+        }
+        const bmi = w / Math.pow(h / 100, 2);
+        const cat = bmiCategory(bmi);
+        const idealW = (isMaleSex(document.getElementById('editGender').value === 'Male' ? 'Masculino' : 'Femenino') ? 22.5 : 21.5) * Math.pow(h / 100, 2);
+        el.innerHTML = `BMI preview: <span class="${cat.color}">${bmi.toFixed(1)} — ${cat.label}</span> · Ideal ~${idealW.toFixed(1)} kg (BMI target)`;
+        el.className = 'text-[11px] font-black text-center mt-3 uppercase tracking-wide text-slate-700';
+    }
+
+    function calcularMetasIdeales(edad, sexo, masa_magra_actual, pesoRef, grasaRef, alturaCm) {
         let isMale = isMaleSex(sexo);
-        // Reference body-fat % by sex/age
         let gIdeal = (isMale ? 12 : 20) + (Math.max(0, edad - 20) * 0.15);
         gIdeal = Math.max(isMale ? 8 : 18, Math.min(gIdeal, isMale ? 22 : 30));
 
-        // Weight if we kept all lean mass and only adjusted fat % to target
         let pesoPorGrasa = masa_magra_actual / (1 - (gIdeal / 100));
         let pesoRefN = parseFloat(pesoRef);
         let grasaRefN = parseFloat(grasaRef);
+        let h = parseFloat(alturaCm) / 100;
+        let imcTarget = isMale ? 22.5 : 21.5;
+        let pesoPorImc = (h > 0) ? (imcTarget * h * h) : null;
+        let bmiRef = (h > 0 && !isNaN(pesoRefN)) ? (pesoRefN / (h * h)) : null;
 
         let pesoIdeal = pesoPorGrasa;
         let gTarget = gIdeal;
 
-        // Fat-loss clinic rule: NEVER prescribe gaining weight as the "ideal"
-        if (!isNaN(grasaRefN) && grasaRefN <= gIdeal) {
-            // Already at/below target fat → maintain current/start weight
+        // If BMI shows overweight/obese, use BMI-based ideal (clinic fat-loss goal)
+        if (bmiRef != null && bmiRef >= 25 && pesoPorImc != null && !isNaN(pesoRefN)) {
+            pesoIdeal = Math.min(pesoRefN, pesoPorImc);
+        } else if (!isNaN(grasaRefN) && grasaRefN <= gIdeal) {
+            // Lean by fat % and not overweight by BMI → maintain
             pesoIdeal = !isNaN(pesoRefN) ? pesoRefN : pesoPorGrasa;
             gTarget = grasaRefN;
         } else if (!isNaN(pesoRefN)) {
@@ -443,7 +526,7 @@
             grasa_perc: gTarget,
             magra: masa_magra_actual,
             agua_perc: isMale ? 60 : 55,
-            imc: isMale ? 22.5 : 21.5
+            imc: imcTarget
         };
     }
     function renderDiff(act, ini, isLowerBetter, suffix) {
@@ -493,7 +576,7 @@
         }
         document.getElementById('modalID').innerText = `ID: ${pOrig.id}`;
         document.getElementById('modalNombre').innerText = pOrig.nombre || 'Patient';
-        document.getElementById('modalInfo').innerText = `${isMale?'M':'F'} | ${pOrig.edad || 0} YRS | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
+        document.getElementById('modalInfo').innerText = `${isMale?'M':'F'} | ${pOrig.edad || 0} YRS | HEIGHT: ${pOrig.altura || '--'} CM | START: ${pOrig.fechaInicio ? pOrig.fechaInicio.substring(0,10) : '--'} | UPDATED: ${lastUpdateDate}`;
         let edad = parseFloat(pOrig.edad || 0), altura = parseFloat(pOrig.altura || 0);
         let iniPeso = parseFloat(pOrig.peso || 0), iniGrasa = parseFloat(pOrig.grasa || 0);
         let iniFfm = iniPeso * (1 - (iniGrasa/100));
@@ -504,7 +587,7 @@
             if(last.predicta_data) { actViscVal = last.predicta_data.visceral || actViscVal; actEdadMVal = last.predicta_data.edad_metabolica || actEdadMVal; actBmrVal = last.predicta_data.bmr || actBmrVal; actAguaVal = last.predicta_data.agua_perc || actAguaVal; }
         }
         if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
-        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa);
+        let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm, iniPeso, iniGrasa, altura);
         
         // MODIFICACIÓN DE LA FUNCIÓN DE IA: 3 a 2 SESIONES
         generateAI_Admin(iniGrasa, actGrasa, actViscVal, pOrig.nombre);
@@ -554,7 +637,12 @@
         document.getElementById('tAguaAct').innerText = currentCalc.aguaAct.toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
         document.getElementById('tImcAct').innerText = currentCalc.imcAct.toFixed(1);
+        document.getElementById('tImcAct').className = currentCalc.imcAct >= 25 ? 'text-center font-black text-orange-500' : 'text-center font-black text-emerald-600';
+        document.getElementById('tImcPrg').innerHTML = renderDiff(currentCalc.imcAct, iniPeso ? (iniPeso/Math.pow(altura/100,2)) : currentCalc.imcAct, true, '');
         document.getElementById('tImcId').innerText = metas.imc.toFixed(1);
+        let bmiStat = bmiCategory(currentCalc.imcAct);
+        document.getElementById('tImcEst').innerText = bmiStat.label;
+        document.getElementById('tImcEst').className = `text-right text-[9px] uppercase font-bold ${bmiStat.color}`;
         document.getElementById('tViscAct').innerText = currentCalc.viscAct;
         document.getElementById('tEdadMAct').innerText = currentCalc.edadMAct;
         document.getElementById('tBmrAct').innerText = Math.round(currentCalc.bmrAct);
@@ -661,6 +749,8 @@
             }
             overlay.style.display = 'block';
             overlay.scrollTop = 0;
+            updateEditBmiPreview();
+            document.getElementById('editGender').onchange = updateEditBmiPreview;
         } catch (err) {
             console.error(err);
             alert("Edit error: " + (err && err.message ? err.message : err));
