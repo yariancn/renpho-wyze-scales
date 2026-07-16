@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.18</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.19</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,7 +14,6 @@
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
         #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
-        #modalEditar { z-index: 120; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
@@ -45,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.18 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.19 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -101,48 +100,47 @@
         </div>
     </div>
 
-    <div id="modalEditar">
-        <div class="modal-content max-w-2xl h-auto p-6 mt-[8vh]">
-            <button onclick="closeEditClientModal()" class="absolute top-4 right-5 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
-            <h2 class="text-xl font-black uppercase italic mb-4 border-l-4 border-amber-500 pl-3">Edit Patient Registration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <input type="text" id="editID" class="input-titan bg-slate-100 text-slate-500" placeholder="Patient ID" readonly title="ID cannot be changed">
-                <input type="text" id="editName" class="input-titan" placeholder="Full Name">
-                <input type="number" id="editAge" class="input-titan border-blue-100" placeholder="Age (Years)">
-                <input type="number" id="editHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
-                <select id="editGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
-                <select id="editPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
-                    <option value="">-- Assign Nutrition Plan --</option>
-                    <option value="Ginoide">Ginoide (Pear Shape)</option>
-                    <option value="Androide">Androide (Apple Shape)</option>
-                    <option value="Mixto">Mixto (Mixed)</option>
-                    <option value="Menopausia">Menopausia</option>
-                    <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
-                </select>
-                <input type="date" id="editStartDate" class="input-titan" title="Start date (Day 1)">
-            </div>
-            <div class="bg-amber-50 p-3 rounded-[16px] border border-amber-100 mb-3">
-                <p class="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">Day 1 Baseline — changing this recalculates all progress</p>
-                <div class="flex gap-3 items-center">
-                    <input type="number" id="editWeight" class="input-titan text-center text-blue-600" placeholder="Start Weight (kg)" step="0.1">
-                    <input type="number" id="editFat" class="input-titan text-center text-emerald-600" placeholder="Start Fat %" step="0.1">
-                </div>
-            </div>
-            <p id="editStatus" class="text-[9px] font-mono text-amber-700 mt-1 text-center uppercase h-3"></p>
-            <button onclick="saveEditClient()" class="w-full titan-btn py-3 rounded-xl mt-2 uppercase text-[10px] tracking-widest bg-amber-600 hover:bg-amber-700">SAVE CHANGES</button>
-        </div>
-    </div>
-
     <div id="modalDetalle">
         <div class="modal-content" id="captureArea">
-            <div class="sticky-header flex justify-between items-center no-print pr-24" id="headerBotones">
-                <div class="flex gap-4 items-center">
-                    <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
-                    <button onclick="openEditClientModal()" class="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-amber-600 transition">✏️ EDIT PATIENT</button>
-                    <button onclick="openHistory()" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-indigo-800 transition">⏱️ FULL HISTORY</button>
-                    <button id="btnSaveImage" onclick="descargarImagen()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-800 transition">📸 SAVE IMAGE</button>
+            <div id="editOverlay" class="no-print" style="display:none; position:absolute; inset:0; z-index:200; background:rgba(15,23,42,0.92); backdrop-filter:blur(6px); overflow-y:auto; border-radius:20px;">
+                <div class="bg-white max-w-2xl w-[95%] mx-auto my-6 p-6 rounded-2xl relative shadow-2xl">
+                    <button type="button" onclick="closeEditClientModal()" class="absolute top-4 right-5 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
+                    <h2 class="text-xl font-black uppercase italic mb-4 border-l-4 border-amber-500 pl-3">Edit Patient Registration</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input type="text" id="editID" class="input-titan bg-slate-100 text-slate-500" placeholder="Patient ID" readonly title="ID cannot be changed">
+                        <input type="text" id="editName" class="input-titan" placeholder="Full Name">
+                        <input type="number" id="editAge" class="input-titan border-blue-100" placeholder="Age (Years)">
+                        <input type="number" id="editHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
+                        <select id="editGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
+                        <select id="editPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
+                            <option value="">-- Assign Nutrition Plan --</option>
+                            <option value="Ginoide">Ginoide (Pear Shape)</option>
+                            <option value="Androide">Androide (Apple Shape)</option>
+                            <option value="Mixto">Mixto (Mixed)</option>
+                            <option value="Menopausia">Menopausia</option>
+                            <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
+                        </select>
+                        <input type="date" id="editStartDate" class="input-titan" title="Start date (Day 1)">
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-[16px] border border-amber-100 mb-3">
+                        <p class="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">Day 1 Baseline — changing this recalculates all progress</p>
+                        <div class="flex gap-3 items-center">
+                            <input type="number" id="editWeight" class="input-titan text-center text-blue-600" placeholder="Start Weight (kg)" step="0.1">
+                            <input type="number" id="editFat" class="input-titan text-center text-emerald-600" placeholder="Start Fat %" step="0.1">
+                        </div>
+                    </div>
+                    <p id="editStatus" class="text-[9px] font-mono text-amber-700 mt-1 text-center uppercase h-3"></p>
+                    <button type="button" onclick="saveEditClient()" class="w-full titan-btn py-3 rounded-xl mt-2 uppercase text-[10px] tracking-widest bg-amber-600 hover:bg-amber-700">SAVE CHANGES</button>
                 </div>
-                <button onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
+            </div>
+            <div class="sticky-header flex justify-between items-center no-print pr-24" id="headerBotones">
+                <div class="flex gap-4 items-center flex-wrap">
+                    <button type="button" onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
+                    <button type="button" id="btnEditPatient" class="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-amber-600 transition">✏️ EDIT PATIENT</button>
+                    <button type="button" onclick="openHistory()" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-indigo-800 transition">⏱️ FULL HISTORY</button>
+                    <button type="button" id="btnSaveImage" onclick="descargarImagen()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-800 transition">📸 SAVE IMAGE</button>
+                </div>
+                <button type="button" onclick="closeModal()" class="text-gray-300 text-2xl hover:text-red-500">✕</button>
             </div>
             
             <div class="p-4">
@@ -559,24 +557,49 @@
     }
 
     function openEditClientModal() {
-        if (!currentPatient) return;
-        const p = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
-        const isMale = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m');
-        document.getElementById('editID').value = p.id || '';
-        document.getElementById('editName').value = p.nombre || '';
-        document.getElementById('editAge').value = p.edad || '';
-        document.getElementById('editHeight').value = p.altura || '';
-        document.getElementById('editGender').value = isMale ? 'Male' : 'Female';
-        document.getElementById('editPlan').value = p.plan_asignado || '';
-        document.getElementById('editWeight').value = p.peso || '';
-        document.getElementById('editFat').value = p.grasa || '';
-        const start = p.fechaInicio ? String(p.fechaInicio).substring(0, 10) : '';
-        document.getElementById('editStartDate').value = start;
-        document.getElementById('editStatus').innerText = '';
-        document.getElementById('modalEditar').style.display = 'block';
+        try {
+            if (!currentPatient) {
+                alert("Open a patient first.");
+                return;
+            }
+            const p = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
+            const sexo = String(p.sexo || 'm').toLowerCase();
+            const isMale = sexo.startsWith('m');
+            document.getElementById('editID').value = p.id != null ? String(p.id) : '';
+            document.getElementById('editName').value = p.nombre || '';
+            document.getElementById('editAge').value = p.edad != null ? p.edad : '';
+            document.getElementById('editHeight').value = p.altura != null ? p.altura : '';
+            document.getElementById('editGender').value = isMale ? 'Male' : 'Female';
+            const plan = String(p.plan_asignado || '').trim();
+            const planEl = document.getElementById('editPlan');
+            planEl.value = [...planEl.options].some(o => o.value === plan) ? plan : '';
+            document.getElementById('editWeight').value = p.peso != null ? p.peso : '';
+            document.getElementById('editFat').value = p.grasa != null ? p.grasa : '';
+            let start = '';
+            if (p.fechaInicio) {
+                const raw = String(p.fechaInicio);
+                const m = raw.match(/(\d{4}-\d{2}-\d{2})/);
+                start = m ? m[1] : raw.substring(0, 10);
+            }
+            document.getElementById('editStartDate').value = start;
+            document.getElementById('editStatus').innerText = '';
+            const overlay = document.getElementById('editOverlay');
+            if (!overlay) {
+                alert("Edit form missing. Hard-refresh the page (Cmd+Shift+R).");
+                return;
+            }
+            overlay.style.display = 'block';
+            overlay.scrollTop = 0;
+        } catch (err) {
+            console.error(err);
+            alert("Edit error: " + (err && err.message ? err.message : err));
+        }
     }
 
-    function closeEditClientModal() { document.getElementById('modalEditar').style.display = 'none'; }
+    function closeEditClientModal() {
+        const overlay = document.getElementById('editOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
 
     async function saveEditClient() {
         const required = ['editName', 'editAge', 'editHeight', 'editWeight', 'editGender', 'editPlan'];
@@ -661,9 +684,16 @@
 
     function openNewClientModal() { document.getElementById('modalNuevo').style.display = 'block'; }
     function closeNewClientModal() { document.getElementById('modalNuevo').style.display = 'none'; }
-    function closeModal() { document.getElementById('modalDetalle').style.display = 'none'; }
+    function closeModal() {
+        closeEditClientModal();
+        document.getElementById('modalDetalle').style.display = 'none';
+    }
     function filterTable() { const q = document.getElementById('searchInput').value.toLowerCase(); document.querySelectorAll('#clientTableBody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none'); }
-    window.onload = fetchData;
+    window.onload = function() {
+        const btn = document.getElementById('btnEditPatient');
+        if (btn) btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); openEditClientModal(); });
+        fetchData();
+    };
 </script>
 </body>
 </html>
