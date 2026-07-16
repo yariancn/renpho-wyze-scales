@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.16</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.17</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -13,8 +13,7 @@
         .predicta-card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
         .titan-btn { background: #1e293b; color: white; transition: all 0.2s; font-weight: 900; cursor: pointer; border: none; }
         .input-titan { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; outline: none; font-weight: 600; font-size: 13px; }
-        /* CORRECCIÓN DE CAPAS: z-index subido a 9999 para que siempre esté al frente */
-        #modalDetalle, #modalNuevo, #infoModalPanel { z-index: 9999; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        #modalDetalle, #modalNuevo, #modalEditar, #infoModalPanel { z-index: 100; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 98vw; max-width: 1050px; height: 98vh; margin: 1vh auto; border-radius: 20px; overflow-y: auto; position: relative; }
         .sticky-header { position: sticky; top: 0; background: white; z-index: 50; padding: 10px 20px; border-bottom: 1px solid #f1f5f9; }
         .comp-table th { padding: 4px 4px; font-size: 9px; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
@@ -45,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.16 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.17 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -101,11 +100,44 @@
         </div>
     </div>
 
+    <div id="modalEditar">
+        <div class="modal-content max-w-2xl h-auto p-6 mt-[8vh]">
+            <button onclick="closeEditClientModal()" class="absolute top-4 right-5 text-gray-300 text-xl font-black hover:text-red-500">✕</button>
+            <h2 class="text-xl font-black uppercase italic mb-4 border-l-4 border-amber-500 pl-3">Edit Patient Registration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <input type="text" id="editID" class="input-titan bg-slate-100 text-slate-500" placeholder="Patient ID" readonly title="ID cannot be changed">
+                <input type="text" id="editName" class="input-titan" placeholder="Full Name">
+                <input type="number" id="editAge" class="input-titan border-blue-100" placeholder="Age (Years)">
+                <input type="number" id="editHeight" class="input-titan border-blue-100" placeholder="Height (cm)">
+                <select id="editGender" class="input-titan font-bold text-blue-900"><option value="Male">Male</option><option value="Female">Female</option></select>
+                <select id="editPlan" class="input-titan font-bold text-indigo-900 border-indigo-200">
+                    <option value="">-- Assign Nutrition Plan --</option>
+                    <option value="Ginoide">Ginoide (Pear Shape)</option>
+                    <option value="Androide">Androide (Apple Shape)</option>
+                    <option value="Mixto">Mixto (Mixed)</option>
+                    <option value="Menopausia">Menopausia</option>
+                    <option value="Kit7Dias">Kit 7 Días (Starting Box)</option>
+                </select>
+                <input type="date" id="editStartDate" class="input-titan" title="Start date (Day 1)">
+            </div>
+            <div class="bg-amber-50 p-3 rounded-[16px] border border-amber-100 mb-3">
+                <p class="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-2">Day 1 Baseline — changing this recalculates all progress</p>
+                <div class="flex gap-3 items-center">
+                    <input type="number" id="editWeight" class="input-titan text-center text-blue-600" placeholder="Start Weight (kg)" step="0.1">
+                    <input type="number" id="editFat" class="input-titan text-center text-emerald-600" placeholder="Start Fat %" step="0.1">
+                </div>
+            </div>
+            <p id="editStatus" class="text-[9px] font-mono text-amber-700 mt-1 text-center uppercase h-3"></p>
+            <button onclick="saveEditClient()" class="w-full titan-btn py-3 rounded-xl mt-2 uppercase text-[10px] tracking-widest bg-amber-600 hover:bg-amber-700">SAVE CHANGES</button>
+        </div>
+    </div>
+
     <div id="modalDetalle">
         <div class="modal-content" id="captureArea">
             <div class="sticky-header flex justify-between items-center no-print pr-24" id="headerBotones">
                 <div class="flex gap-4 items-center">
                     <button onclick="closeModal()" class="text-blue-600 font-black text-[10px] uppercase hover:underline">← BACK</button>
+                    <button onclick="openEditClientModal()" class="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-amber-600 transition">✏️ EDIT PATIENT</button>
                     <button onclick="openHistory()" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-indigo-800 transition">⏱️ FULL HISTORY</button>
                     <button id="btnSaveImage" onclick="descargarImagen()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-800 transition">📸 SAVE IMAGE</button>
                 </div>
@@ -194,7 +226,7 @@
         </div>
     </div>
 
-    <div id="historyModalPanel" class="no-print" style="z-index: 9999; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+    <div id="historyModalPanel" class="no-print" style="z-index: 105; display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
         <div class="bg-white max-w-4xl w-[95vw] mx-auto mt-[5vh] rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
                 <div>
@@ -221,6 +253,7 @@
     </div>
 
 <script>
+    // URL DE CONEXIÓN CON GOOGLE SHEETS
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuIcI4lN-AMx82_W35BfcGn1szKgnrIbu3YOPAwuhtx3kKAOQ5i-pBWxM0Z2G8oKPz/exec"; 
 
     let globalData = [], currentPatient = null, datosClinicosTemporales = {}, unitMode = 'KG', chartInstance = null;
@@ -279,7 +312,7 @@
             header.style.display = 'flex'; panelBt.style.display = 'flex'; btn.innerText = originalText;
             let imgData = canvas.toDataURL("image/png"), overlay = document.createElement('div');
             overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
-            overlay.style.zIndex = '99999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
+            overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
             overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
             let instruction = document.createElement('p'); instruction.innerText = "LONG PRESS THE IMAGE TO SAVE OR SHARE"; instruction.className = "text-white font-black mb-4 tracking-widest text-sm bg-blue-600 px-4 py-2 rounded-full";
             let img = document.createElement('img'); img.src = imgData; img.style.maxHeight = '80vh'; img.style.maxWidth = '95vw'; img.style.borderRadius = '15px'; img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
@@ -402,6 +435,7 @@
         if (p.isTempScan) { actPeso = parseFloat(p.peso); actGrasa = parseFloat(p.grasa); actViscVal = p.grasa_visceral; actEdadMVal = p.edad_metabolica; actBmrVal = p.bmr_kcal; actAguaVal = p.agua_corporal_perc; }
         let actFfm = actPeso * (1 - (actGrasa/100)), metas = calcularMetasIdeales(edad, pOrig.sexo, iniFfm);
         
+        // MODIFICACIÓN DE LA FUNCIÓN DE IA: 3 a 2 SESIONES
         generateAI_Admin(iniGrasa, actGrasa, actViscVal, pOrig.nombre);
 
         currentCalc = { pesoAct: actPeso, pesoId: metas.peso, grasaAct: actGrasa, grasaId: metas.grasa_perc, magraAct: actFfm, magraId: metas.magra, magraBase: iniFfm, muscAct: actFfm * 0.56, muscId: metas.magra * 0.56, aguaAct: actAguaVal || (actFfm * 0.732 / actPeso)*100, aguaId: metas.agua_perc, imcAct: actPeso/Math.pow(altura/100,2), imcId: metas.imc, viscAct: actViscVal || Math.round((actGrasa*0.25)+(edad*0.12)-(isMale?3:6)), viscId: 9, edadMAct: actEdadMVal || Math.max(18, Math.round(edad+(actGrasa-(isMale?15:22))*0.5)), edadMId: edad, bmrAct: actBmrVal || 370+(21.6*actFfm), bmrId: 370+(21.6*metas.magra) };
@@ -468,11 +502,14 @@
     }
 
     function generateAI_Admin(iniGrasa, actGrasa, actVisc, nombrePaciente) {
+        // Esta función replica la lógica de la IA, solo que está incrustada en el proceso de la Báscula.
+        // Como la báscula de momento no despliega el "AI Report" en su interfaz web (lo hace en el iPad de manera distinta), 
+        // dejamos este bloque preparado por si en el futuro decides visualizar el reporte aquí mismo.
         let msg = `Clinical analysis for ${nombrePaciente ? nombrePaciente.split(' ')[0] : 'Patient'}: `;
         if(actGrasa < iniGrasa) {
             msg += `You have reduced your body fat by ${(iniGrasa - actGrasa).toFixed(1)}%. The Infra Baldan protocol is effectively stimulating cellular lipid oxidation. `;
         } else {
-            msg += `Your metabolism is adapting. Do not skip your 2 weekly sessions to break this resistance. `;
+            msg += `Your metabolism is adapting. Do not skip your 2 weekly sessions to break this resistance. `; // <--- MODIFICADO DE 3 A 2 SESIONES
         }
 
         if(actVisc > 9) {
@@ -480,6 +517,7 @@
         } else {
             msg += `Your visceral fat is in an optimal protective range. `;
         }
+        // console.log("AI Report:", msg); 
     }
 
     function initChart(pO, pT, dP, sR) {
@@ -505,6 +543,73 @@
         document.getElementById('btStatusNew').innerText = "SAVING...";
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "guardarCliente", cliente: c }) });
         datosClinicosTemporales = {}; closeNewClientModal(); fetchData();
+    }
+
+    function openEditClientModal() {
+        if (!currentPatient) return;
+        const p = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
+        const isMale = (p.sexo ? String(p.sexo).toLowerCase() : 'm').startsWith('m');
+        document.getElementById('editID').value = p.id || '';
+        document.getElementById('editName').value = p.nombre || '';
+        document.getElementById('editAge').value = p.edad || '';
+        document.getElementById('editHeight').value = p.altura || '';
+        document.getElementById('editGender').value = isMale ? 'Male' : 'Female';
+        document.getElementById('editPlan').value = p.plan_asignado || '';
+        document.getElementById('editWeight').value = p.peso || '';
+        document.getElementById('editFat').value = p.grasa || '';
+        const start = p.fechaInicio ? String(p.fechaInicio).substring(0, 10) : '';
+        document.getElementById('editStartDate').value = start;
+        document.getElementById('editStatus').innerText = '';
+        document.getElementById('modalEditar').style.display = 'block';
+    }
+
+    function closeEditClientModal() { document.getElementById('modalEditar').style.display = 'none'; }
+
+    async function saveEditClient() {
+        const required = ['editName', 'editAge', 'editHeight', 'editWeight', 'editGender', 'editPlan'];
+        for (let id of required) {
+            if (!document.getElementById(id).value) { alert("Please complete all fields."); return; }
+        }
+        const pOrig = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
+        const newPeso = parseFloat(document.getElementById('editWeight').value);
+        const newGrasa = parseFloat(document.getElementById('editFat').value || 0);
+        const baselineChanged = Math.abs(parseFloat(pOrig.peso || 0) - newPeso) > 0.05 || Math.abs(parseFloat(pOrig.grasa || 0) - newGrasa) > 0.05;
+        if (baselineChanged && !confirm("Day 1 weight/fat will change. This recalculates progress for all sessions. Continue?")) return;
+
+        const updated = {
+            id: document.getElementById('editID').value,
+            nombre: document.getElementById('editName').value.trim(),
+            sexo: document.getElementById('editGender').value === 'Male' ? 'Masculino' : 'Femenino',
+            edad: document.getElementById('editAge').value,
+            altura: document.getElementById('editHeight').value,
+            peso: newPeso,
+            grasa: newGrasa,
+            fechaInicio: document.getElementById('editStartDate').value || (pOrig.fechaInicio ? String(pOrig.fechaInicio).substring(0, 10) : new Date().toISOString().split('T')[0]),
+            plan_asignado: document.getElementById('editPlan').value,
+            avances: pOrig.avances || []
+        };
+
+        const st = document.getElementById('editStatus');
+        st.innerText = "SAVING...";
+        try {
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "actualizarCliente", cliente: updated }) });
+            const idx = globalData.findIndex(c => String(c.id) === String(updated.id));
+            if (idx >= 0) {
+                globalData[idx] = { ...globalData[idx], ...updated, avances: globalData[idx].avances || updated.avances || [] };
+                currentPatient = globalData[idx];
+            } else {
+                currentPatient = { ...pOrig, ...updated };
+            }
+            st.innerText = "SAVED ✅";
+            setTimeout(() => {
+                closeEditClientModal();
+                renderTable(globalData);
+                selectPatient(currentPatient);
+                fetchData();
+            }, 800);
+        } catch (e) {
+            st.innerText = "❌ ERROR";
+        }
     }
 
     async function addSession() {
