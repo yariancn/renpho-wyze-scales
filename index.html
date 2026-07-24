@@ -498,7 +498,7 @@
 
     async function loadRemoteOverrides() {
         try {
-            const res = await fetch(OVERRIDES_URL + '?t=' + Date.now());
+            const res = await fetch(OVERRIDES_URL + (OVERRIDES_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
             if (res.ok) remoteOverrides = await res.json();
         } catch (e) { console.warn('overrides:', e); }
     }

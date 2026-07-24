@@ -127,7 +127,7 @@
         btn.disabled = true;
         try {
             try {
-                const o = await fetch(OVERRIDES_URL + '?t=' + Date.now());
+                const o = await fetch(OVERRIDES_URL + (OVERRIDES_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
                 if (o.ok) remoteOverrides = await o.json();
             } catch (e) {}
             const res = await fetch(`${WEB_APP_URL}?action=obtenerClientes`);
