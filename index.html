@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.24</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.25</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.24 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.25 PRO</h1>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -183,6 +183,7 @@
                         </div>
                         <p id="editBmiPreview" class="text-[11px] font-black text-center mt-3 uppercase tracking-wide text-slate-600">BMI preview: --</p>
                     </div>
+                    <button type="button" onclick="recalcularDesdeEdit()" class="w-full bg-indigo-600 text-white py-3 rounded-xl mb-2 uppercase text-[10px] font-black tracking-widest hover:bg-indigo-800">🔄 RECALCULATE COMPOSITION (sex/age/height + ohms)</button>
                     <p id="editStatus" class="text-[9px] font-mono text-amber-700 mt-1 text-center uppercase h-3"></p>
                     <button type="button" onclick="saveEditClient()" class="w-full titan-btn py-3 rounded-xl mt-2 uppercase text-[10px] tracking-widest bg-amber-600 hover:bg-amber-700">SAVE CHANGES</button>
                 </div>
@@ -379,9 +380,116 @@
             const key = String(p.id);
             const patch = { ...(remoteOverrides[key] || {}), ...(local[key] || {}) };
             if (!Object.keys(patch).length) return p;
-            const { nota, updatedAt, ...fields } = patch;
-            return { ...p, ...fields };
+            const { nota, updatedAt, avances_override, ...fields } = patch;
+            let out = { ...p, ...fields };
+            if (avances_override && Array.isArray(avances_override) && out.avances) {
+                out.avances = out.avances.map(av => {
+                    const day = String(av.fecha || '').substring(0, 10);
+                    const fix = avances_override.find(x => String(x.fecha || '').substring(0, 10) === day);
+                    if (!fix) return av;
+                    const { predicta_data, ...rest } = fix;
+                    return {
+                        ...av,
+                        ...rest,
+                        predicta_data: { ...(av.predicta_data || {}), ...(predicta_data || {}) }
+                    };
+                });
+            }
+            return out;
         });
+    }
+
+    /** Recalculate Day 1 + all sessions from stored ohms using current sex/age/height */
+    function recalcularComposicionPaciente(p) {
+        const edad = parseFloat(p.edad || 0);
+        const altura = parseFloat(p.altura || 0);
+        const sexo = p.sexo;
+        if (!edad || !altura) throw new Error('Age and height required');
+
+        const patch = { sexo: isMaleSex(sexo) ? 'Masculino' : 'Femenino', edad, altura };
+        const ohms0 = parseFloat(p.ohms || 0);
+        const peso0 = parseFloat(p.peso || 0);
+        if (ohms0 > 100 && peso0 > 0) {
+            const c0 = calcularComposicionTotal(peso0, ohms0, altura, edad, sexo);
+            patch.grasa = parseFloat(c0.grasa_porcentaje);
+            patch.grasa_visceral = c0.visceral;
+            patch.agua_corporal_perc = c0.agua_perc;
+            patch.edad_metabolica = c0.edad_metabolica;
+            patch.bmr_kcal = c0.bmr;
+            patch.masa_muscular_kg = +(peso0 * (1 - patch.grasa / 100) * 0.56).toFixed(1);
+            patch.ohms = ohms0;
+        }
+
+        const avances_override = [];
+        (p.avances || []).forEach(av => {
+            const oh = parseFloat(av.ohms || (av.predicta_data && av.predicta_data.ohms) || 0);
+            const w = parseFloat(av.peso || 0);
+            if (!(oh > 100 && w > 0)) return;
+            const c = calcularComposicionTotal(w, oh, altura, edad, sexo);
+            const day = String(av.fecha || '').substring(0, 10);
+            avances_override.push({
+                fecha: day,
+                peso: w,
+                grasa: parseFloat(c.grasa_porcentaje),
+                grasa_visceral: c.visceral,
+                agua_corporal_perc: c.agua_perc,
+                edad_metabolica: c.edad_metabolica,
+                bmr_kcal: c.bmr,
+                masa_muscular_kg: +(w * (1 - parseFloat(c.grasa_porcentaje) / 100) * 0.56).toFixed(1),
+                ohms: oh,
+                predicta_data: {
+                    grasa_porcentaje: c.grasa_porcentaje,
+                    visceral: c.visceral,
+                    edad_metabolica: c.edad_metabolica,
+                    bmr: c.bmr,
+                    agua_perc: c.agua_perc,
+                    ohms: oh
+                }
+            });
+        });
+        if (avances_override.length) patch.avances_override = avances_override;
+        patch.nota = 'Recalculado con sexo/edad/altura actuales desde ohms';
+        return patch;
+    }
+
+    function recalcularDesdeEdit() {
+        try {
+            if (!currentPatient) return;
+            const pOrig = globalData.find(c => String(c.id) === String(currentPatient.id)) || currentPatient;
+            // Use form values (what staff is editing now)
+            const draft = {
+                ...pOrig,
+                sexo: document.getElementById('editGender').value === 'Male' ? 'Masculino' : 'Femenino',
+                edad: Number(document.getElementById('editAge').value),
+                altura: Number(document.getElementById('editHeight').value),
+                peso: parseFloat(document.getElementById('editWeight').value) || pOrig.peso,
+                grasa: parseFloat(document.getElementById('editFat').value) || pOrig.grasa
+            };
+            const patch = recalcularComposicionPaciente(draft);
+            if (patch.grasa != null) document.getElementById('editFat').value = patch.grasa;
+            setLocalOverride(draft.id || pOrig.id, patch);
+            // Merge into memory immediately
+            const idx = globalData.findIndex(c => String(c.id) === String(pOrig.id));
+            const merged = applyOverrides(idx >= 0 ? [globalData[idx]] : [pOrig])[0];
+            // Force patch on top
+            const forced = { ...merged, ...patch };
+            if (patch.avances_override && forced.avances) {
+                forced.avances = forced.avances.map(av => {
+                    const day = String(av.fecha || '').substring(0, 10);
+                    const fix = patch.avances_override.find(x => x.fecha === day);
+                    if (!fix) return av;
+                    const { predicta_data, ...rest } = fix;
+                    return { ...av, ...rest, predicta_data: { ...(av.predicta_data || {}), ...(predicta_data || {}) } };
+                });
+            }
+            if (idx >= 0) globalData[idx] = forced;
+            currentPatient = forced;
+            document.getElementById('editStatus').innerText = `RECALC OK — Day1 fat ${patch.grasa}%`;
+            updateEditBmiPreview();
+            alert(`Composition recalculated as ${isMaleSex(draft.sexo) ? 'Male' : 'Female'}.\n\nDay 1 fat: ${pOrig.grasa}% → ${patch.grasa}%\nSessions updated: ${(patch.avances_override || []).length}\n\nClick SAVE CHANGES, then review the report.`);
+        } catch (e) {
+            alert('Recalc error: ' + e.message);
+        }
     }
 
     async function loadRemoteOverrides() {
@@ -1055,7 +1163,9 @@
                 body: JSON.stringify({ action: "actualizarCliente", cliente: updated })
             });
 
+            const prevLocal = getLocalOverrides()[String(updated.id)] || {};
             setLocalOverride(updated.id, {
+                ...prevLocal,
                 nombre: updated.nombre,
                 sexo: updated.sexo,
                 edad: updated.edad,

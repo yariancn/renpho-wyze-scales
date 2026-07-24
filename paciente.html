@@ -134,7 +134,21 @@
             let data = await res.json();
             const patch = remoteOverrides[String(id)];
             if (patch) {
-                data = data.map(p => String(p.id) === String(id) ? { ...p, ...patch } : p);
+                data = data.map(p => {
+                    if (String(p.id) !== String(id)) return p;
+                    const { nota, updatedAt, avances_override, ...fields } = patch;
+                    let out = { ...p, ...fields };
+                    if (avances_override && out.avances) {
+                        out.avances = out.avances.map(av => {
+                            const day = String(av.fecha || '').substring(0, 10);
+                            const fix = avances_override.find(x => String(x.fecha || '').substring(0, 10) === day);
+                            if (!fix) return av;
+                            const { predicta_data, ...rest } = fix;
+                            return { ...av, ...rest, predicta_data: { ...(av.predicta_data || {}), ...(predicta_data || {}) } };
+                        });
+                    }
+                    return out;
+                });
             }
             const match = data.find(p => String(p.id).trim() === id && String(p.nombre).toLowerCase().includes(name));
             if (match) { patientData = match; loadDashboard(); }

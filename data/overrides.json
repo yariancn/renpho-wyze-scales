@@ -2,6 +2,56 @@
   "52685488": {
     "sexo": "Femenino",
     "nombre": "Karina Magallanes",
-    "nota": "Corregido: estaba como Masculino en Sheets"
+    "edad": 29,
+    "altura": 175,
+    "peso": 80.2,
+    "grasa": 27.0,
+    "grasa_visceral": 4,
+    "agua_corporal_perc": 53.43,
+    "edad_metabolica": 32,
+    "bmr_kcal": 1635,
+    "masa_muscular_kg": 32.8,
+    "ohms": 505,
+    "nota": "Recalculado con fórmula Femenina (antes estaba como Masculino: grasa día1 14.6% → 27.0%)",
+    "avances_override": [
+      {
+        "fecha": "2026-07-16",
+        "peso": 79.3,
+        "grasa": 25.8,
+        "grasa_visceral": 4,
+        "agua_corporal_perc": 54.3,
+        "edad_metabolica": 31,
+        "bmr_kcal": 1641,
+        "masa_muscular_kg": 32.9,
+        "ohms": 496,
+        "predicta_data": {
+          "grasa_porcentaje": "25.8",
+          "visceral": 4,
+          "edad_metabolica": 31,
+          "bmr": 1641,
+          "agua_perc": 54.3,
+          "ohms": 496
+        }
+      },
+      {
+        "fecha": "2026-07-24",
+        "peso": 80.2,
+        "grasa": 26.7,
+        "grasa_visceral": 4,
+        "agua_corporal_perc": 53.65,
+        "edad_metabolica": 31,
+        "bmr_kcal": 1640,
+        "masa_muscular_kg": 32.9,
+        "ohms": 500,
+        "predicta_data": {
+          "grasa_porcentaje": "26.7",
+          "visceral": 4,
+          "edad_metabolica": 31,
+          "bmr": 1640,
+          "agua_perc": 53.65,
+          "ohms": 500
+        }
+      }
+    ]
   }
 }
