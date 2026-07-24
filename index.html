@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.27</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.28</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,7 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.27 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.28 PRO</h1>
         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">BIA model: Sun et al. 2003 (NHANES) · Weight = scale · Fat/FFM = estimate</p>
     </header>
 
@@ -222,6 +222,20 @@
                 <div class="predicta-card p-3 mb-3">
                     <h3 class="text-[9px] font-black text-slate-400 uppercase mb-1 italic tracking-widest">CLINICAL COMPOSITION REPORT · <span class="text-blue-600">BIA Sun 2003</span></h3>
                     <p class="text-[9px] text-slate-400 mb-2">Weight from scale (real). Fat / lean / water = BIA estimates for trend tracking — not DXA. Visceral = clinic estimate.</p>
+                    <div id="muscleSummaryStrip" class="grid grid-cols-3 gap-2 mb-3 rounded-xl border-2 border-indigo-200 bg-indigo-50 p-3">
+                        <div class="text-center">
+                            <p class="text-[8px] font-black uppercase tracking-widest text-indigo-400">Muscle Day 1</p>
+                            <p id="muscStripIni" class="text-xl font-black text-slate-500 mt-0.5">--</p>
+                        </div>
+                        <div class="text-center border-x border-indigo-200">
+                            <p class="text-[8px] font-black uppercase tracking-widest text-indigo-600">Muscle Now</p>
+                            <p id="muscStripAct" class="text-xl font-black text-indigo-700 mt-0.5">--</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[8px] font-black uppercase tracking-widest text-emerald-600">Muscle Target</p>
+                            <p id="muscStripId" class="text-xl font-black text-emerald-700 mt-0.5">--</p>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left comp-table">
                             <thead>
@@ -238,8 +252,8 @@
                                 <tr><td>Total Weight <span class="info-btn no-print" onclick="showInfo('weight')">ⓘ</span></td><td id="tPesoIni" class="text-center font-medium text-slate-400">--</td><td id="tPesoAct" class="text-center font-black">--</td><td id="tPesoPrg" class="text-center">--</td><td id="tPesoId" class="text-center val-ideal">--</td><td id="tPesoEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Fat Mass (kg) <span class="info-btn no-print" onclick="showInfo('fatmass')">ⓘ</span></td><td id="tFatKgIni" class="text-center font-medium text-slate-400">--</td><td id="tFatKgAct" class="text-center font-black">--</td><td id="tFatKgPrg" class="text-center">--</td><td id="tFatKgId" class="text-center val-ideal">--</td><td id="tFatKgEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Body Fat % <span class="info-btn no-print" onclick="showInfo('fat')">ⓘ</span></td><td id="tGrasaIni" class="text-center font-medium text-slate-400">--</td><td id="tGrasaAct" class="text-center font-black">--</td><td id="tGrasaPrg" class="text-center">--</td><td id="tGrasaId" class="text-center val-ideal">--</td><td id="tGrasaEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Lean Mass (Base) <span class="info-btn no-print" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraIni" class="text-center font-medium text-slate-400">--</td><td id="tMagraAct" class="text-center font-black">--</td><td id="tMagraPrg" class="text-center">--</td><td id="tMagraId" class="text-center val-ideal">--</td><td id="tMagraEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
-                                <tr><td>Skeletal Muscle <span class="info-btn no-print" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscIni" class="text-center font-medium text-slate-400">--</td><td id="tMuscAct" class="text-center font-black">--</td><td id="tMuscPrg" class="text-center">--</td><td id="tMuscId" class="text-center val-ideal">--</td><td id="tMuscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
+                                <tr class="bg-indigo-50/80"><td class="text-indigo-800">Muscle Mass <span class="info-btn no-print" onclick="showInfo('muscle')">ⓘ</span></td><td id="tMuscIni" class="text-center font-medium text-slate-400">--</td><td id="tMuscAct" class="text-center font-black text-indigo-700">--</td><td id="tMuscPrg" class="text-center">--</td><td id="tMuscId" class="text-center val-ideal">--</td><td id="tMuscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
+                                <tr><td>Lean Mass (FFM) <span class="info-btn no-print" onclick="showInfo('lean')">ⓘ</span></td><td id="tMagraIni" class="text-center font-medium text-slate-400">--</td><td id="tMagraAct" class="text-center font-black">--</td><td id="tMagraPrg" class="text-center">--</td><td id="tMagraId" class="text-center val-ideal">--</td><td id="tMagraEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Body Water <span class="info-btn no-print" onclick="showInfo('water')">ⓘ</span></td><td id="tAguaIni" class="text-center font-medium text-slate-400">--</td><td id="tAguaAct" class="text-center font-black">--</td><td id="tAguaPrg" class="text-center">--</td><td id="tAguaId" class="text-center val-ideal">--</td><td id="tAguaEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>BMI <span class="info-btn no-print" onclick="showInfo('bmi')">ⓘ</span></td><td id="tImcIni" class="text-center font-medium text-slate-400">--</td><td id="tImcAct" class="text-center font-black">--</td><td id="tImcPrg" class="text-center">--</td><td id="tImcId" class="text-center val-ideal">--</td><td id="tImcEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
                                 <tr><td>Visceral Fat (est.) <span class="info-btn no-print" onclick="showInfo('visceral')">ⓘ</span></td><td id="tViscIni" class="text-center font-medium text-slate-400">--</td><td id="tViscAct" class="text-center font-black">--</td><td id="tViscPrg" class="text-center">--</td><td id="tViscId" class="text-center val-ideal">--</td><td id="tViscEst" class="text-right text-[9px] uppercase font-bold">--</td></tr>
@@ -292,8 +306,13 @@
                         <div class="flex flex-col gap-2">
                             <button onclick="conectarBáscula('seguimiento')" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-blue-200 hover:bg-blue-800 transition w-full">📶 START SCAN</button>
                             <div class="grid grid-cols-2 gap-2">
-                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Weight kg</span><input type="number" id="sessWeight" class="input-titan text-center text-sm text-blue-600 p-2" placeholder="kg" step="0.1"></label>
-                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Fat %</span><input type="number" id="sessFat" class="input-titan text-center text-sm text-emerald-600 p-2" placeholder="%" step="0.1"></label>
+                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Weight kg</span><input type="number" id="sessWeight" class="input-titan text-center text-sm text-blue-600 p-2" placeholder="kg" step="0.1" oninput="updateSessionMusclePreview()"></label>
+                                <label class="block"><span class="text-[8px] font-black text-slate-400 uppercase">Fat %</span><input type="number" id="sessFat" class="input-titan text-center text-sm text-emerald-600 p-2" placeholder="%" step="0.1" oninput="updateSessionMusclePreview()"></label>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1.5 mt-1 rounded-lg border border-indigo-200 bg-indigo-50 p-2">
+                                <div class="text-center"><p class="text-[7px] font-black uppercase text-indigo-400">Musc D1</p><p id="sessMuscIni" class="text-xs font-black text-slate-500">--</p></div>
+                                <div class="text-center"><p class="text-[7px] font-black uppercase text-indigo-600">Musc Now</p><p id="sessMuscAct" class="text-xs font-black text-indigo-700">--</p></div>
+                                <div class="text-center"><p class="text-[7px] font-black uppercase text-emerald-600">Musc Tgt</p><p id="sessMuscId" class="text-xs font-black text-emerald-700">--</p></div>
                             </div>
                             <button type="button" onclick="previewSessionBriefing()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase w-full">👁 PREVIEW BRIEFING</button>
                             <button onclick="addSession()" class="titan-btn px-3 py-2 rounded-lg text-[9px] uppercase bg-slate-900 w-full mt-1">SAVE PROGRESS</button>
@@ -584,9 +603,9 @@
             desc = `<b>Your Status:</b> Initial <b>${convP(c.magraBase).toFixed(1)} ${u}</b>. Current <b>${convP(c.magraAct).toFixed(1)} ${u}</b>.`;
             why = "Protection of vital structure while cutting fat.";
         } else if(metricId === 'muscle') {
-            title = "SKELETAL MUSCLE";
-            desc = `<b>Your Status:</b> <b>${convP(c.muscAct).toFixed(1)} ${u}</b>. Required <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
-            why = "Active metabolic furnace that burns calories even at rest.";
+            title = "MUSCLE MASS (SKELETAL)";
+            desc = `<b>Your Status:</b> Now <b>${convP(c.muscAct).toFixed(1)} ${u}</b> · Day 1 <b>${convP(c.muscIni || c.muscAct).toFixed(1)} ${u}</b> · Target ≥ <b>${convP(c.muscId).toFixed(1)} ${u}</b>.`;
+            why = "Protect Day-1 muscle while losing fat — preserves metabolism and body shape. Estimated as ~56% of fat-free mass (BIA).";
         } else if(metricId === 'water') {
             title = "BODY WATER";
             desc = `<b>Your Status:</b> <b>${c.aguaAct.toFixed(1)}%</b>. Target <b>${c.aguaId}%</b>.`;
@@ -685,7 +704,7 @@
         const deltas = [
             { l: 'Δ Weight', ...fmtDelta(w, prevW, true), u: 'kg' },
             { l: 'Δ Fat %', ...fmtDelta(f, prevF, true), u: '%' },
-            { l: 'Δ Lean', ...fmtDelta(lean, prevLean, false), u: 'kg' },
+            { l: 'Δ Muscle', ...fmtDelta(lean * 0.56, prevLean * 0.56, false), u: 'kg' },
             { l: 'Δ Fat kg', ...fmtDelta(fatKg, prevW * (prevF / 100), true), u: 'kg' }
         ];
         document.getElementById('scanDeltaGrid').innerHTML = deltas.map(d => `
@@ -694,17 +713,18 @@
                 <p class="text-xl font-black ${d.cls} mt-1">${d.text}<span class="text-[10px] ml-0.5">${d.u}</span></p>
             </div>`).join('');
 
+        const muscNow = scan.muscle != null ? parseFloat(scan.muscle) : (lean * 0.56);
         const metrics = [
             { l: 'Weight', v: w.toFixed(1) + ' kg' },
             { l: 'Fat %', v: f.toFixed(1) + '%' },
+            { l: 'Muscle', v: muscNow.toFixed(1) + ' kg' },
+            { l: 'Lean FFM', v: lean.toFixed(1) + ' kg' },
             { l: 'Fat kg', v: fatKg.toFixed(1) },
-            { l: 'Lean', v: lean.toFixed(1) + ' kg' },
             { l: 'BMI', v: isNaN(bmi) ? '--' : bmi.toFixed(1) },
             { l: 'Visceral', v: visc != null ? visc : '--' },
             { l: 'Water', v: water != null ? Number(water).toFixed(1) + '%' : '--' },
             { l: 'BMR', v: bmr != null ? Math.round(bmr) : '--' },
             { l: 'Bio-Age', v: edadM != null ? edadM : '--' },
-            { l: 'Muscle', v: (lean * 0.56).toFixed(1) + ' kg' },
             { l: 'Height', v: (pOrig.altura || '--') + ' cm' },
             { l: 'Sex', v: isMaleSex(pOrig.sexo) ? 'M' : 'F' }
         ];
@@ -724,6 +744,18 @@
 
         panel.classList.remove('hidden');
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function updateSessionMusclePreview() {
+        if (!currentPatient || !currentCalc) return;
+        const w = parseFloat(document.getElementById('sessWeight').value);
+        const f = parseFloat(document.getElementById('sessFat').value);
+        if (!(w > 0) || isNaN(f)) return;
+        const musc = w * (1 - f / 100) * 0.56;
+        document.getElementById('sessMuscAct').innerText = convP(musc).toFixed(1);
+        if (document.getElementById('muscStripAct')) {
+            document.getElementById('muscStripAct').innerText = convP(musc).toFixed(1) + ' ' + lblU;
+        }
     }
 
     function getLastMeasurement(pOrig) {
@@ -945,7 +977,6 @@
         document.getElementById('tPesoIni').innerText = convP(iniPeso).toFixed(1);
         document.getElementById('tGrasaIni').innerText = iniGrasa.toFixed(1);
         document.getElementById('tMagraIni').innerText = convP(iniFfm).toFixed(1);
-        document.getElementById('tMuscIni').innerText = convP(iniFfm*0.56).toFixed(1);
         document.getElementById('tAguaIni').innerText = pOrig.agua_corporal_perc ? parseFloat(pOrig.agua_corporal_perc).toFixed(1) : '--';
         document.getElementById('tImcIni').innerText = iniPeso ? (iniPeso/Math.pow(altura/100,2)).toFixed(1) : '--';
         document.getElementById('tViscIni').innerText = iniViscEst;
@@ -974,13 +1005,35 @@
         document.getElementById('tMagraEst').innerText = actFfm >= metas.magra ? 'PROTECTED' : 'AT RISK';
         document.getElementById('tMagraEst').className = actFfm >= metas.magra ? 'text-right text-[9px] uppercase font-bold text-emerald-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
 
-        let muscAct = actFfm * 0.56, muscIni = iniFfm * 0.56;
+        let muscAct = actFfm * 0.56, muscIni = iniFfm * 0.56, muscId = metas.magra * 0.56;
+        // Prefer stored skeletal muscle when available
+        if (pOrig.masa_muscular_kg != null && !isNaN(parseFloat(pOrig.masa_muscular_kg))) {
+            muscIni = parseFloat(pOrig.masa_muscular_kg);
+        }
+        if (!p.isTempScan && pOrig.avances && pOrig.avances.length > 0) {
+            const lastAv = [...pOrig.avances].sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).pop();
+            if (lastAv.masa_muscular_kg != null && !isNaN(parseFloat(lastAv.masa_muscular_kg))) {
+                muscAct = parseFloat(lastAv.masa_muscular_kg);
+            }
+        }
+        if (p.isTempScan && p.masa_muscular_kg != null) muscAct = parseFloat(p.masa_muscular_kg);
+        else if (p.isTempScan && p.predicta_data && p.predicta_data.ffm_kg != null) muscAct = parseFloat(p.predicta_data.ffm_kg) * 0.56;
+
+        document.getElementById('tMuscIni').innerText = convP(muscIni).toFixed(1) + ' ' + lblU;
         document.getElementById('tMuscAct').innerText = convP(muscAct).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscAct').className = (muscAct < (metas.magra * 0.56)) ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-600';
+        document.getElementById('tMuscAct').className = (muscAct < muscId - 0.3) ? 'text-center font-black text-orange-500' : 'text-center font-black text-indigo-700';
         document.getElementById('tMuscPrg').innerHTML = renderDiff(convP(muscAct), convP(muscIni), false, lblU);
-        document.getElementById('tMuscId').innerText = convP(metas.magra * 0.56).toFixed(1) + ' ' + lblU;
-        document.getElementById('tMuscEst').innerText = (muscAct >= (metas.magra * 0.56)) ? 'HYPERTROPHY' : 'NEEDS FIBER';
-        document.getElementById('tMuscEst').className = (muscAct >= (metas.magra * 0.56)) ? 'text-right text-[9px] uppercase font-bold text-indigo-500' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+        document.getElementById('tMuscId').innerText = convP(muscId).toFixed(1) + ' ' + lblU;
+        document.getElementById('tMuscEst').innerText = (muscAct >= muscId - 0.3) ? 'PROTECTED' : 'PROTECT MUSCLE';
+        document.getElementById('tMuscEst').className = (muscAct >= muscId - 0.3) ? 'text-right text-[9px] uppercase font-bold text-indigo-600' : 'text-right text-[9px] uppercase font-bold text-orange-500';
+
+        document.getElementById('muscStripIni').innerText = convP(muscIni).toFixed(1) + ' ' + lblU;
+        document.getElementById('muscStripAct').innerText = convP(muscAct).toFixed(1) + ' ' + lblU;
+        document.getElementById('muscStripId').innerText = convP(muscId).toFixed(1) + ' ' + lblU;
+        document.getElementById('sessMuscIni').innerText = convP(muscIni).toFixed(1);
+        document.getElementById('sessMuscAct').innerText = convP(muscAct).toFixed(1);
+        document.getElementById('sessMuscId').innerText = convP(muscId).toFixed(1);
+        currentCalc.muscAct = muscAct; currentCalc.muscId = muscId; currentCalc.muscIni = muscIni;
 
         document.getElementById('tAguaAct').innerText = currentCalc.aguaAct.toFixed(1) + ' %';
         document.getElementById('tAguaId').innerText = metas.agua_perc.toFixed(1) + ' %';
@@ -999,6 +1052,7 @@
         renderClinicalExtras(pOrig, iniPeso, iniGrasa, actPeso, actGrasa, actFfm, iniFfm, metas, currentCalc.viscAct, currentCalc.aguaAct, altura);
 
         if (p.isTempScan) {
+            const muscScan = (actFfm * 0.56);
             renderScanBriefing(pOrig, {
                 peso: actPeso,
                 grasa: actGrasa,
@@ -1006,6 +1060,7 @@
                 agua_perc: currentCalc.aguaAct,
                 bmr: currentCalc.bmrAct,
                 edad_metabolica: currentCalc.edadMAct,
+                muscle: muscScan,
                 predicta_data: p.predicta_data || datosClinicosTemporales
             });
         } else {
@@ -1254,7 +1309,15 @@
     async function addSession() {
         let w = document.getElementById('sessWeight').value, f = document.getElementById('sessFat').value;
         if(!w) return;
-        const a = { id: currentPatient.id, fecha: new Date().toISOString().split('T')[0], peso: w, grasa: f || 0, predicta_data: datosClinicosTemporales };
+        const muscSave = +(parseFloat(w) * (1 - (parseFloat(f || 0) / 100)) * 0.56).toFixed(1);
+        const a = {
+            id: currentPatient.id,
+            fecha: new Date().toISOString().split('T')[0],
+            peso: w,
+            grasa: f || 0,
+            masa_muscular_kg: muscSave,
+            predicta_data: datosClinicosTemporales
+        };
         document.getElementById('btStatusSeg').innerText = "SYNCHRONIZING...";
         try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "agregarAvance", avance: a }) }); document.getElementById('btStatusSeg').innerText = "DATA UPDATED ✅"; setTimeout(() => { datosClinicosTemporales = {}; closeModal(); fetchData(); }, 1200); } catch(e) { document.getElementById('btStatusSeg').innerText = "❌ ERROR"; }
     }
@@ -1277,8 +1340,21 @@
                         datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex);
                         fI.value = Number(datosClinicosTemporales.grasa_porcentaje).toFixed(1);
                         if (contexto !== 'nuevo') {
-                            let pT = { ...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales };
+                            const muscKg = +((datosClinicosTemporales.ffm_kg || (p * (1 - datosClinicosTemporales.grasa_porcentaje / 100))) * 0.56).toFixed(1);
+                            let pT = {
+                                ...currentPatient,
+                                peso: p,
+                                grasa: datosClinicosTemporales.grasa_porcentaje,
+                                masa_muscular_kg: muscKg,
+                                grasa_visceral: datosClinicosTemporales.visceral,
+                                agua_corporal_perc: datosClinicosTemporales.agua_perc,
+                                edad_metabolica: datosClinicosTemporales.edad_metabolica,
+                                bmr_kcal: datosClinicosTemporales.bmr,
+                                isTempScan: true,
+                                predicta_data: datosClinicosTemporales
+                            };
                             selectPatient(pT);
+                            updateSessionMusclePreview();
                         }
                         st.innerText = "✅ SCAN · " + BIA_MODEL_LABEL;
                         setTimeout(() => dev.gatt.disconnect(), 1500);

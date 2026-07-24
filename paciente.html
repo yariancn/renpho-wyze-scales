@@ -82,6 +82,24 @@
                 </div>
             </div>
 
+            <div class="titan-card p-4 border-indigo-500/30 bg-indigo-950/30">
+                <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-3">Muscle mass</p>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Day 1</p>
+                        <p class="text-lg font-black mt-1"><span id="dashMuscIni">--</span> <span class="text-[9px] text-slate-500">LB</span></p>
+                    </div>
+                    <div>
+                        <p class="text-[8px] text-indigo-400 font-black uppercase">Now</p>
+                        <p class="text-lg font-black mt-1 text-indigo-300"><span id="dashMuscAct">--</span> <span class="text-[9px]">LB</span></p>
+                    </div>
+                    <div>
+                        <p class="text-[8px] text-emerald-500 font-black uppercase">Target</p>
+                        <p class="text-lg font-black mt-1 text-emerald-400"><span id="dashMuscId">--</span> <span class="text-[9px]">LB</span></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="titan-card p-5">
                 <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Weight trend</p>
                 <div class="h-40"><canvas id="patientChart"></canvas></div>
@@ -205,6 +223,19 @@
         document.getElementById('dashStartWeight').innerText = (startW * lb).toFixed(1);
         document.getElementById('dashCurrWeight').innerText = (lastW * lb).toFixed(1);
         document.getElementById('dashFat').innerText = lastF.toFixed(1);
+
+        const muscIniKg = patientData.masa_muscular_kg != null
+            ? parseFloat(patientData.masa_muscular_kg)
+            : startW * (1 - startF / 100) * 0.56;
+        let muscActKg = lastW * (1 - lastF / 100) * 0.56;
+        if (patientData.avances && patientData.avances.length) {
+            const lastAv = [...patientData.avances].sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).pop();
+            if (lastAv.masa_muscular_kg != null) muscActKg = parseFloat(lastAv.masa_muscular_kg);
+        }
+        const muscIdKg = muscIniKg; // protect baseline
+        document.getElementById('dashMuscIni').innerText = (muscIniKg * lb).toFixed(1);
+        document.getElementById('dashMuscAct').innerText = (muscActKg * lb).toFixed(1);
+        document.getElementById('dashMuscId').innerText = (muscIdKg * lb).toFixed(1);
 
         const h = parseFloat(patientData.altura || 0);
         const bmi = h ? lastW / Math.pow(h / 100, 2) : NaN;
