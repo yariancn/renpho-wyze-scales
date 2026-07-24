@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.26</title>
+    <title>OXYHYPERBARIC - WEIGHT CONTROL V4.27</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +44,8 @@
 
     <header class="flex flex-col items-center mb-4 no-print">
         <img src="logo.jpg" alt="OXYHYPERBARIC" class="h-14 mb-2 object-contain" onerror="this.src='https://via.placeholder.com/400x100?text=OXY+HYPERBARIC';">
-        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.26 PRO</h1>
+        <h1 class="text-xl font-black tracking-tighter uppercase italic text-gray-950">WEIGHT CONTROL V4.27 PRO</h1>
+        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">BIA model: Sun et al. 2003 (NHANES) · Weight = scale · Fat/FFM = estimate</p>
     </header>
 
     <main class="max-w-5xl mx-auto no-print">
@@ -219,7 +220,8 @@
                 </header>
 
                 <div class="predicta-card p-3 mb-3">
-                    <h3 class="text-[9px] font-black text-slate-400 uppercase mb-1 italic tracking-widest">CLINICAL COMPOSITION REPORT</h3>
+                    <h3 class="text-[9px] font-black text-slate-400 uppercase mb-1 italic tracking-widest">CLINICAL COMPOSITION REPORT · <span class="text-blue-600">BIA Sun 2003</span></h3>
+                    <p class="text-[9px] text-slate-400 mb-2">Weight from scale (real). Fat / lean / water = BIA estimates for trend tracking — not DXA. Visceral = clinic estimate.</p>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left comp-table">
                             <thead>
@@ -416,7 +418,7 @@
             patch.agua_corporal_perc = c0.agua_perc;
             patch.edad_metabolica = c0.edad_metabolica;
             patch.bmr_kcal = c0.bmr;
-            patch.masa_muscular_kg = +(peso0 * (1 - patch.grasa / 100) * 0.56).toFixed(1);
+            patch.masa_muscular_kg = +((c0.ffm_kg || (peso0 * (1 - patch.grasa / 100))) * 0.56).toFixed(1);
             patch.ohms = ohms0;
         }
 
@@ -435,15 +437,17 @@
                 agua_corporal_perc: c.agua_perc,
                 edad_metabolica: c.edad_metabolica,
                 bmr_kcal: c.bmr,
-                masa_muscular_kg: +(w * (1 - parseFloat(c.grasa_porcentaje) / 100) * 0.56).toFixed(1),
+                masa_muscular_kg: +((c.ffm_kg || (w * (1 - parseFloat(c.grasa_porcentaje) / 100))) * 0.56).toFixed(1),
                 ohms: oh,
                 predicta_data: {
-                    grasa_porcentaje: c.grasa_porcentaje,
+                    grasa_porcentaje: String(c.grasa_porcentaje),
                     visceral: c.visceral,
                     edad_metabolica: c.edad_metabolica,
                     bmr: c.bmr,
                     agua_perc: c.agua_perc,
-                    ohms: oh
+                    ohms: oh,
+                    modelo: c.modelo || BIA_MODEL_ID,
+                    ffm_kg: c.ffm_kg
                 }
             });
         });
@@ -1268,7 +1272,17 @@
                 let d = new Uint8Array(e.target.value.buffer);
                 if (d[0] === 0x10 && d.length >= 10) {
                     let p = ((d[3] << 8) | d[4]) / 100, oh = (d[8] << 8) | d[9]; if (!fin) wI.value = p.toFixed(1);
-                    if (oh > 100 && !fin) { fin = true; datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex); fI.value = datosClinicosTemporales.grasa_porcentaje; if (contexto !== 'nuevo') { let pT = {...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales }; selectPatient(pT); } st.innerText = "✅ SCAN COMPLETED."; setTimeout(() => dev.gatt.disconnect(), 1500); }
+                    if (oh > 100 && !fin) {
+                        fin = true;
+                        datosClinicosTemporales = calcularComposicionTotal(p, oh, parseFloat(alt), parseFloat(ed), sex);
+                        fI.value = Number(datosClinicosTemporales.grasa_porcentaje).toFixed(1);
+                        if (contexto !== 'nuevo') {
+                            let pT = { ...currentPatient, peso: p, grasa: datosClinicosTemporales.grasa_porcentaje, isTempScan: true, predicta_data: datosClinicosTemporales };
+                            selectPatient(pT);
+                        }
+                        st.innerText = "✅ SCAN · " + BIA_MODEL_LABEL;
+                        setTimeout(() => dev.gatt.disconnect(), 1500);
+                    }
                 }
             });
             setTimeout(() => cW.writeValueWithoutResponse(new Uint8Array([0x13, 0x09, 0x15, 0x01, 180, 50, 0x01, 0x00, 0x19])), 1000);
@@ -1307,18 +1321,68 @@
         return { label: 'WATCH', color: 'text-orange-500' };
     }
 
+    // Scientific BIA model: Sun SS et al. Am J Clin Nutr. 2003;77(2):331-340 (NHANES multicomponent)
+    // Uses stature²/resistance + weight + resistance. Foot-to-foot scales approximate whole-body R.
+    const BIA_MODEL_ID = 'sun2003_nhanes';
+    const BIA_MODEL_LABEL = 'Sun et al. 2003 (NHANES BIA)';
+
     function calcularComposicionTotal(p, oh, h, ed, sx) {
-        const hm = h / 100, imc = p / (hm * hm), z = (h * h) / oh; let isM = isMaleSex(sx);
-        let ffm = (isM ? (0.39 * z) + (0.18 * p) + (0.16 * h) - (0.09 * ed) + 5.0 : (0.38 * z) + (0.15 * p) + (0.12 * h) - (0.07 * ed) + 4.5); if (imc > 28) ffm += (imc - 28) * 0.15;
-        let pg = ((p - ffm) / p) * 100;
-        const visceral = estimarVisceral(pg, ed, sx, p, h);
+        const peso = parseFloat(p);
+        const r = parseFloat(oh);
+        const ht = parseFloat(h); // cm
+        const edad = parseFloat(ed) || 30;
+        const isM = isMaleSex(sx);
+        if (!(peso > 0 && r > 50 && ht > 100)) {
+            throw new Error('Need valid weight, ohms and height for BIA');
+        }
+        const s2r = (ht * ht) / r; // cm²/Ω
+
+        // Final race-combined FFM equations (Sun 2003). Intercepts are negative.
+        // Males:   FFM = -10.68 + 0.65·S²/R + 0.26·Wt + 0.02·R
+        // Females: FFM =  -9.53 + 0.69·S²/R + 0.17·Wt + 0.02·R
+        let ffm = isM
+            ? (-10.68 + 0.65 * s2r + 0.26 * peso + 0.02 * r)
+            : (-9.53 + 0.69 * s2r + 0.17 * peso + 0.02 * r);
+
+        // Physiological clamps (protect against extreme foot-to-foot artifacts)
+        const ffmMin = peso * 0.45;
+        const ffmMax = peso * 0.95;
+        ffm = Math.max(ffmMin, Math.min(ffmMax, ffm));
+
+        const fatKg = Math.max(0, peso - ffm);
+        const pg = (fatKg / peso) * 100;
+
+        // TBW race-combined (Sun 2003)
+        // Males:   TBW = 1.20 + 0.45·S²/R + 0.18·Wt
+        // Females: TBW = 3.75 + 0.45·S²/R + 0.11·Wt
+        let tbw = isM
+            ? (1.20 + 0.45 * s2r + 0.18 * peso)
+            : (3.75 + 0.45 * s2r + 0.11 * peso);
+        tbw = Math.max(peso * 0.35, Math.min(peso * 0.75, tbw));
+        const agua_perc = (tbw / peso) * 100;
+
+        const imc = peso / Math.pow(ht / 100, 2);
+        const visceral = estimarVisceral(pg, edad, sx, peso, ht);
+        const refFat = isM ? 15 : 22;
+        const edad_metabolica = Math.max(18, Math.round(edad + (pg - refFat) * 0.5));
+        // Mifflin-St Jeor is more current for BMR than 370+21.6·FFM alone; still FFM-linked for trends
+        const bmr = Math.round(isM
+            ? (10 * peso + 6.25 * ht - 5 * edad + 5)
+            : (10 * peso + 6.25 * ht - 5 * edad - 161));
+
         return {
-            grasa_porcentaje: pg.toFixed(1),
+            modelo: BIA_MODEL_ID,
+            modelo_label: BIA_MODEL_LABEL,
+            grasa_porcentaje: +pg.toFixed(1),
+            grasa_kg: +fatKg.toFixed(2),
+            ffm_kg: +ffm.toFixed(2),
             visceral,
-            edad_metabolica: Math.max(18, Math.round(ed + (pg - (isM ? 15 : 22)) * 0.5)),
-            bmr: Math.round(370 + (21.6 * ffm)),
-            agua_perc: (ffm * 0.732 / p) * 100,
-            ohms: oh,
+            edad_metabolica,
+            bmr,
+            agua_perc: +agua_perc.toFixed(2),
+            tbw_l: +tbw.toFixed(2),
+            ohms: r,
+            s2r: +s2r.toFixed(2),
             imc: +imc.toFixed(1)
         };
     }
